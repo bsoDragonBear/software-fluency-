@@ -402,6 +402,96 @@
     border-color: var(--accent);
     color: var(--accent);
   }
+
+  /* PROGRESS BAR */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.35s ease;
+    width: 0%;
+  }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  /* HIDE KNOWN BUTTON */
+  #hide-known-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    align-self: center;
+  }
+
+  #hide-known-btn.active {
+    border-color: var(--accent4);
+    color: var(--accent4);
+  }
+
+  /* KNOWN INDICATOR IN LIST */
+  .term-item.known .term-name  { color: var(--text-faint); }
+  .term-item.known .term-preview { opacity: 0.5; }
+
+  .term-known-check {
+    margin-left: auto;
+    color: var(--accent);
+    font-size: 11px;
+    flex-shrink: 0;
+    padding-left: 6px;
+  }
+
+  /* KNOWN TOGGLE IN DETAIL */
+  .known-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 24px;
+  }
+
+  .known-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  .known-toggle.is-known {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(74,240,160,0.08);
+  }
 </style>
 </head>
 <body>
@@ -411,6 +501,11 @@
     <span class="logo">// ref</span>
     <h1>Software <span>Fluency</span></h1>
     <button id="random-btn" onclick="pickRandom()">⚄ Random</button>
+    <button id="hide-known-btn" onclick="toggleHideKnown()">○ Hide known</button>
+  </div>
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="progress-label" id="progress-label"></span>
   </div>
   <div class="search-bar">
     <span class="search-icon">⌕</span>
@@ -2172,6 +2267,33 @@ A saga orchestrator (a workflow service or engine) explicitly calls each partici
 let currentCat = 'all';
 let currentTerm = null;
 let searchQuery = '';
+let knownTerms  = new Set(JSON.parse(localStorage.getItem('sf-known') || '[]'));
+let hideKnown   = false;
+
+// ── KNOWN TERMS ─────────────────────────────────────────────────────────────
+function toggleKnown(id) {
+  if (knownTerms.has(id)) knownTerms.delete(id);
+  else knownTerms.add(id);
+  localStorage.setItem('sf-known', JSON.stringify([...knownTerms]));
+  renderProgress();
+  renderList();
+  if (currentTerm) renderDetail(currentTerm);
+}
+
+function toggleHideKnown() {
+  hideKnown = !hideKnown;
+  const btn = document.getElementById('hide-known-btn');
+  btn.classList.toggle('active', hideKnown);
+  btn.textContent = hideKnown ? '● Hide known' : '○ Hide known';
+  renderList();
+}
+
+function renderProgress() {
+  const total = TERMS.length;
+  const known = knownTerms.size;
+  document.getElementById('progress-fill').style.width = total ? (known / total * 100) + '%' : '0%';
+  document.getElementById('progress-label').textContent = `${known} / ${total} known`;
+}
 
 // ── RENDER TABS ────────────────────────────────────────────────────────────
 function renderTabs() {
@@ -2191,6 +2313,7 @@ function renderTabs() {
 // ── FILTER TERMS ───────────────────────────────────────────────────────────
 function filteredTerms() {
   return TERMS.filter(t => {
+    if (hideKnown && knownTerms.has(t.id)) return false;
     const catMatch = currentCat === 'all' || t.cat === currentCat;
     if (!catMatch) return false;
     if (!searchQuery) return true;
@@ -2220,14 +2343,15 @@ function renderList() {
   }
 
   list.innerHTML = terms.map(t => {
-    const cat = CATS.find(c => c.id === t.cat);
+    const known = knownTerms.has(t.id);
     return `
-      <div class="term-item ${currentTerm?.id === t.id ? 'active' : ''}" data-id="${t.id}">
+      <div class="term-item ${currentTerm?.id === t.id ? 'active' : ''} ${known ? 'known' : ''}" data-id="${t.id}">
         <span class="term-cat-dot ${`bg-${t.cat}`}"></span>
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="term-name">${highlight(t.name)}</div>
           <div class="term-preview">${highlight(t.summary)}</div>
         </div>
+        ${known ? '<span class="term-known-check">✓</span>' : ''}
       </div>
     `;
   }).join('');
@@ -2255,6 +2379,9 @@ function renderDetail(term) {
     </div>
     <div class="detail-title">${term.name}</div>
     ${term.aka ? `<div class="detail-aka">Also: ${term.aka}</div>` : ''}
+    <button class="known-toggle ${knownTerms.has(term.id) ? 'is-known' : ''}" data-id="${term.id}">
+      ${knownTerms.has(term.id) ? '✓ I know this' : '○ Mark as known'}
+    </button>
     <div class="detail-body">${term.body}</div>
 
     ${term.analogy ? `
@@ -2294,6 +2421,9 @@ function renderDetail(term) {
       </div>
     ` : ''}
   `;
+
+  // Known toggle
+  detail.querySelector('.known-toggle').onclick = () => toggleKnown(term.id);
 
   // Tag click → search
   detail.querySelectorAll('.tag[data-search]').forEach(el => {
@@ -2345,6 +2475,7 @@ document.getElementById('search').addEventListener('input', e => {
 // ── INIT ───────────────────────────────────────────────────────────────────
 renderTabs();
 renderList();
+renderProgress();
 
 // Select first term
 if (TERMS.length) {
