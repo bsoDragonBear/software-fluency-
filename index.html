@@ -1935,6 +1935,237 @@ endmodule`,
     tags: ['ASIC', 'FPGA', 'NRE', 'tape-out', 'reconfigurable', 'power', 'unit cost', 'prototype', 'eFPGA', 'RTL reuse'],
     related: ['fpga-arch', 'synthesis-flow', 'timing-constraints']
   },
+
+  // ── PATTERNS PEOPLE ACTUALLY TALK ABOUT AT WORK ────────────────────────────
+  {
+    id: 'actor-model', cat: 'dist', name: 'Actor Model', aka: 'Actors, Erlang, Akka, Elixir, message passing',
+    summary: 'A concurrency model where independent "actors" communicate exclusively through asynchronous messages — no shared memory, no locks.',
+    body: `The Actor Model treats <strong>actors</strong> as the fundamental unit of computation. Each actor has a private mailbox, private state, and processes one message at a time. Actors can: send messages to other actors, create new actors, and decide how to handle the next message.<br><br>
+<strong>Why it matters:</strong> Traditional shared-memory concurrency (threads + locks) forces you to reason about who holds which lock when. The actor model eliminates shared state entirely — no deadlocks, no race conditions on shared data. Failures are isolated to individual actors.<br><br>
+<strong>Key properties:</strong><br>
+• <strong>Isolation:</strong> Actor state is private. The only way to affect another actor is to send it a message.<br>
+• <strong>Asynchronous:</strong> Sending a message never blocks the sender. Fire and forget (or use ask pattern for a reply).<br>
+• <strong>Location transparency:</strong> You send to an actor reference — it doesn't matter if that actor is on the same thread, same machine, or across the network. The runtime routes it.<br>
+• <strong>Supervision trees:</strong> Actors are organized in parent-child hierarchies. Parent actors supervise children and decide what to do when a child crashes: restart it, stop it, or escalate. "Let it crash" philosophy (Erlang).<br><br>
+<strong>Implementations:</strong> Erlang/OTP (the original, telecom-grade), Elixir (Erlang VM, modern syntax), Akka (JVM, Scala/Java), Akka.NET, Microsoft Orleans (virtual actors / grains — no explicit lifecycle management).`,
+    analogy: 'Like an office where every employee works independently in their own room. You pass notes under doors — you never walk into someone else\'s office and start moving their papers. If someone\'s room is on fire, their manager decides whether to help or reassign their work.',
+    code: `// Akka (Scala) — classic actor style
+class Counter extends Actor {
+  var count = 0
+  def receive = {
+    case Increment      => count += 1
+    case GetCount(replyTo) => replyTo ! count  // send reply
+  }
+}
+
+// Elixir — GenServer (OTP behavior)
+defmodule Counter do
+  use GenServer
+  def handle_call(:get, _from, state), do: {:reply, state, state}
+  def handle_cast(:increment, state),  do: {:noreply, state + 1}
+end`,
+    tags: ['actor', 'mailbox', 'supervision', 'Erlang', 'Akka', 'Elixir', 'Orleans', 'let it crash', 'location transparency', 'message passing'],
+    related: ['event-driven', 'saga-pattern', 'microservices', 'cqrs']
+  },
+  {
+    id: 'saga-pattern', cat: 'dist', name: 'Saga Pattern', aka: 'Distributed transaction, compensating transaction, choreography, orchestration',
+    summary: 'A way to manage data consistency across multiple microservices without a distributed transaction — chain local transactions with compensating rollbacks.',
+    body: `In a monolith, a database transaction gives you ACID across multiple tables. In microservices, each service owns its database — you can't have a single transaction span service boundaries. The Saga pattern solves this.<br><br>
+<strong>How it works:</strong> A saga is a sequence of local transactions. Each step publishes an event or sends a command triggering the next step. If any step fails, compensating transactions run in reverse to undo previous steps.<br><br>
+<strong>Two coordination styles:</strong><br><br>
+<strong>Choreography:</strong> No central coordinator. Each service listens for events and publishes its own events in response. Decoupled, but the overall flow is implicit — hard to observe and debug. Works well for simple flows.<br><br>
+<strong>Orchestration:</strong> A central saga orchestrator (a service or workflow engine) explicitly commands each participant and handles failures. The flow is explicit and visible. Easier to reason about, but the orchestrator becomes a new dependency. Tools: Temporal, AWS Step Functions, Conductor.<br><br>
+<strong>Compensating transactions:</strong> Must be explicitly designed — "cancel order", "refund payment", "release inventory". They're not automatic rollbacks; they're business operations that undo the effect of a previous step. Not all operations are easily compensable (e.g., sending an email).<br><br>
+<strong>Idempotency is critical:</strong> Messages can be redelivered. Every step must be safe to execute more than once — use idempotency keys.`,
+    analogy: 'Booking a trip: you book flight, hotel, and car separately. If the car rental fails, you cancel the hotel and flight — each cancellation is a compensating transaction. A travel agent (orchestrator) coordinates it; booking sites talking to each other is choreography.',
+    code: `// Orchestration saga (pseudocode — Temporal-style workflow)
+async function orderSaga(order) {
+  let paymentId, inventoryId;
+  try {
+    paymentId   = await activity.chargePayment(order);
+    inventoryId = await activity.reserveInventory(order);
+    await activity.scheduleShipment(order);
+  } catch (err) {
+    // compensate in reverse
+    if (inventoryId) await activity.releaseInventory(inventoryId);
+    if (paymentId)   await activity.refundPayment(paymentId);
+    throw err;
+  }
+}`,
+    tags: ['saga', 'compensating transaction', 'choreography', 'orchestration', 'Temporal', 'Step Functions', 'idempotency', 'distributed transaction'],
+    related: ['event-driven', 'actor-model', 'microservices', 'outbox-pattern', 'eventual-consistency']
+  },
+  {
+    id: 'ddd', cat: 'arch', name: 'Domain-Driven Design', aka: 'DDD, bounded context, aggregate, ubiquitous language, Eric Evans',
+    summary: 'An approach to software design that centers the model on the business domain — shared language, clear boundaries, and domain logic that belongs to the domain.',
+    body: `DDD (Eric Evans, 2003) is less about code patterns and more about how you think about and structure systems around their business domain.<br><br>
+<strong>Ubiquitous Language:</strong> Developers and domain experts use the exact same vocabulary. The code uses the same terms the business uses. If the business says "booking," the code has a <code>Booking</code> class — not <code>ReservationRecord</code>.<br><br>
+<strong>Bounded Context:</strong> A clear boundary within which a domain model is defined and consistent. The same word ("Order") can mean different things in different contexts (Sales vs Fulfillment vs Billing). Bounded contexts map roughly to microservices, teams, or code modules.<br><br>
+<strong>Aggregate:</strong> A cluster of domain objects treated as a single unit for data changes. Has a root entity (Aggregate Root) that controls all access. All writes go through the root — enforces invariants. E.g., an Order aggregate contains OrderLines; you never mutate an OrderLine directly.<br><br>
+<strong>Entities vs Value Objects:</strong><br>
+• <strong>Entity:</strong> Has a unique identity that persists over time (User, Order). Two users with the same name are different entities.<br>
+• <strong>Value Object:</strong> Defined by its attributes, no identity (Money, Address, DateRange). Immutable. Two $10 bills are identical.<br><br>
+<strong>Domain Events:</strong> Things that happened in the domain, named in past tense (<code>OrderPlaced</code>, <code>PaymentFailed</code>). Published when aggregates change state. The bridge between bounded contexts.<br><br>
+<strong>Strategic vs Tactical DDD:</strong> Strategic = bounded contexts, context maps, team topology. Tactical = aggregates, entities, value objects, repositories, domain services.`,
+    analogy: 'Like different departments in a hospital all using the word "patient" — but Billing\'s "patient" (account, insurance) is different from Surgery\'s "patient" (vitals, procedure notes). Each department speaks their own dialect within their own bounded context.',
+    tags: ['DDD', 'bounded context', 'aggregate', 'ubiquitous language', 'entity', 'value object', 'domain event', 'repository', 'Eric Evans', 'context map'],
+    related: ['microservices', 'event-driven', 'cqrs', 'event-sourcing', 'strangler-fig']
+  },
+  {
+    id: 'event-sourcing', cat: 'arch', name: 'Event Sourcing', aka: 'event store, append-only log, projection, snapshot',
+    summary: 'Store the full history of state changes as an immutable sequence of events — current state is derived by replaying them.',
+    body: `Traditional databases store current state: "the order total is $150." Event sourcing stores what happened: <code>OrderCreated</code>, <code>ItemAdded($50)</code>, <code>ItemAdded($100)</code>. Current state is a projection of the event log.<br><br>
+<strong>Benefits:</strong><br>
+• <strong>Complete audit trail:</strong> You always know exactly what happened and when. Compliance and debugging become dramatically easier.<br>
+• <strong>Temporal queries:</strong> "What did the system look like last Tuesday?" Replay events up to any point in time.<br>
+• <strong>Event-driven integration:</strong> Events are the source of truth — other services subscribe to them. No dual-write problem.<br>
+• <strong>Bug recovery:</strong> Fix a bug in projection logic and rebuild the read model from scratch by replaying all events.<br><br>
+<strong>Projections (Read Models):</strong> Derived views of event history optimized for queries. One event stream can feed many projections — a denormalized "orders by customer" view, a dashboard count, an analytics feed. This is where CQRS integrates naturally.<br><br>
+<strong>Snapshots:</strong> For aggregates with thousands of events, replaying from zero is slow. Periodically snapshot current state + event sequence number; replay starts from the snapshot.<br><br>
+<strong>Challenges:</strong> Event schema evolution (what if you need to change the shape of old events?), eventual consistency of projections, operational complexity of the event store. Not appropriate for simple CRUD systems.`,
+    analogy: 'Like a bank ledger vs a balance display. The display shows $500, but the ledger shows every deposit and withdrawal that got you there. If the display is wrong, the ledger is the truth you rebuild from.',
+    code: `// Event sourcing: aggregate rehydration from events
+class OrderAggregate {
+  static rehydrate(events) {
+    const order = new OrderAggregate();
+    for (const event of events) order.apply(event);
+    return order;
+  }
+  apply(event) {
+    switch (event.type) {
+      case 'OrderCreated':  this.id = event.orderId; this.total = 0; break;
+      case 'ItemAdded':     this.total += event.price; break;
+      case 'OrderCancelled':this.status = 'cancelled'; break;
+    }
+  }
+  addItem(price) {
+    const event = { type: 'ItemAdded', price, at: Date.now() };
+    this.apply(event);
+    this.uncommitted.push(event); // save these to the event store
+  }
+}`,
+    tags: ['event store', 'append-only', 'projection', 'snapshot', 'audit trail', 'temporal query', 'rehydration', 'EventStoreDB'],
+    related: ['cqrs', 'event-driven', 'ddd', 'outbox-pattern']
+  },
+  {
+    id: 'outbox-pattern', cat: 'arch', name: 'Outbox Pattern', aka: 'transactional outbox, at-least-once delivery, Debezium, CDC',
+    summary: 'Guarantee that database writes and message publishes happen together atomically — eliminating the dual-write problem.',
+    body: `The dual-write problem: you save to your database, then publish an event to Kafka. What if the service crashes between the two? Database is updated, event is never published — your system is inconsistent.<br><br>
+<strong>The Outbox Pattern solves this:</strong><br>
+1. In the same database transaction that updates your domain data, also write the event to an <strong>outbox table</strong>.<br>
+2. A separate process (message relay) reads the outbox table and publishes events to the message broker.<br>
+3. Mark published events as processed (or delete them).<br><br>
+The database transaction is the atomicity boundary — either both the domain update and the outbox write happen, or neither does. No lost events.<br><br>
+<strong>Message Relay approaches:</strong><br>
+• <strong>Polling publisher:</strong> A thread queries the outbox table every N seconds for unpublished events. Simple but adds database load and latency.<br>
+• <strong>CDC (Change Data Capture):</strong> A tool like Debezium tails the database's transaction log (binlog/WAL) and publishes changes as events. Near-realtime, no polling, no extra DB load.<br><br>
+<strong>Idempotent consumers:</strong> Even with the outbox, the relay can deliver a message more than once (network retry, relay restart). Consumers must handle duplicate events safely — deduplicate by event ID.<br><br>
+<strong>Inbox pattern (dual):</strong> On the consumer side, write incoming messages to a local inbox table before processing — same atomicity guarantee in reverse.`,
+    analogy: 'Like dropping a letter in an office outbox tray and having a mail room that reliably delivers it — instead of trying to run to the post office yourself mid-task and risking forgetting it.',
+    code: `-- Atomic domain update + outbox write (single transaction)
+BEGIN;
+
+UPDATE orders SET status = 'confirmed' WHERE id = $1;
+
+INSERT INTO outbox (id, aggregate_type, event_type, payload, published)
+VALUES (gen_random_uuid(), 'order', 'OrderConfirmed',
+        '{"orderId": "123", "customerId": "456"}', false);
+
+COMMIT;
+
+-- Relay query (polling publisher)
+SELECT * FROM outbox WHERE published = false ORDER BY created_at LIMIT 100;`,
+    tags: ['dual-write', 'outbox', 'CDC', 'Debezium', 'at-least-once', 'idempotency', 'WAL', 'binlog', 'transactional messaging'],
+    related: ['event-driven', 'saga-pattern', 'event-sourcing', 'microservices']
+  },
+  {
+    id: 'hexagonal-arch', cat: 'arch', name: 'Hexagonal Architecture', aka: 'Ports & Adapters, Clean Architecture, Onion Architecture',
+    summary: 'Structure your application so that business logic is the center — all I/O (databases, APIs, UIs, queues) is a pluggable adapter at the edge.',
+    body: `Alistair Cockburn's Hexagonal Architecture (2005) has one core idea: <strong>the domain must not depend on infrastructure</strong>. Your business logic should be the same whether it's called by an HTTP request, a CLI, a test, or a queue consumer.<br><br>
+<strong>Ports:</strong> Interfaces defined by the application core — the "shape" of what the application needs from the outside world. Two kinds:<br>
+• <strong>Driving ports (primary):</strong> How the outside world drives your application (e.g., <code>OrderService.placeOrder()</code>)<br>
+• <strong>Driven ports (secondary):</strong> What your application needs from infrastructure (e.g., <code>OrderRepository.save()</code>, <code>EmailSender.send()</code>)<br><br>
+<strong>Adapters:</strong> Concrete implementations of ports. A REST controller is a driving adapter. A PostgreSQL repository is a driven adapter. A Kafka consumer is a driving adapter. An S3 client is a driven adapter.<br><br>
+<strong>The dependency rule:</strong> Dependencies always point inward — adapters depend on ports, ports are defined by the core, the core depends on nothing outside itself.<br><br>
+<strong>Why it matters:</strong><br>
+• Swap a PostgreSQL adapter for an in-memory adapter in tests — no database needed<br>
+• Change from REST to gRPC by writing a new adapter, zero core changes<br>
+• Test business logic without spinning up any infrastructure<br><br>
+<strong>Clean Architecture (Uncle Bob) and Onion Architecture</strong> express the same idea with different naming. All share the dependency inversion principle at their heart.`,
+    analogy: 'Like a power outlet standard — your device (core) doesn\'t care what power plant is behind the wall (adapter). You can plug into the grid, a generator, or a battery. Same device, different adapters.',
+    code: `// Core defines the port (interface)
+interface OrderRepository {       // driven port
+  save(order: Order): Promise<void>;
+  findById(id: string): Promise<Order | null>;
+}
+
+// Core domain logic — depends on nothing external
+class PlaceOrderUseCase {
+  constructor(private repo: OrderRepository) {}
+  async execute(cmd: PlaceOrderCommand) {
+    const order = Order.create(cmd);
+    await this.repo.save(order);   // calls the port
+    return order.id;
+  }
+}
+
+// Infrastructure adapter implements the port
+class PostgresOrderRepository implements OrderRepository {
+  async save(order: Order) {
+    await db.query('INSERT INTO orders ...', [order.id, ...]);
+  }
+}`,
+    tags: ['ports and adapters', 'clean architecture', 'onion architecture', 'dependency inversion', 'testability', 'adapter', 'use case', 'domain'],
+    related: ['solid', 'dependency-injection', 'ddd', 'microservices']
+  },
+  {
+    id: 'bulkhead', cat: 'arch', name: 'Bulkhead Pattern', aka: 'failure isolation, thread pool isolation, resource partitioning',
+    summary: 'Partition resources so that a failure in one part of the system cannot exhaust resources and bring down the whole system.',
+    body: `Named after the watertight compartments in a ship\'s hull — a breach in one compartment floods only that compartment, not the entire ship.<br><br>
+<strong>The problem without bulkheads:</strong> Your service calls three downstream services — A, B, and C — all using the same shared thread pool. Service A starts hanging (slow responses). Requests queue up, all threads get consumed waiting for A. Now B and C are also unavailable — even though they're healthy. One slow dependency kills everything.<br><br>
+<strong>Bulkhead implementations:</strong><br><br>
+<strong>Thread pool isolation:</strong> Each downstream dependency gets its own bounded thread pool. A's thread pool fills up → A calls get rejected. B and C's thread pools are unaffected and continue serving requests.<br><br>
+<strong>Semaphore isolation:</strong> Limit concurrent calls per dependency with a semaphore. Lighter weight than thread pools, but if calls block on I/O, threads still accumulate.<br><br>
+<strong>Process / container isolation:</strong> Run different service responsibilities in separate processes or containers — an infrastructure-level bulkhead. K8s resource limits (CPU/memory) per container are a form of bulkhead.<br><br>
+<strong>Combining with Circuit Breaker:</strong> Bulkhead and circuit breaker are complementary. Bulkhead limits blast radius immediately. Circuit breaker detects failure patterns and stops calling the failing service. Most resilience libraries (Resilience4j, Polly, Hystrix) support both.`,
+    analogy: 'A ship without bulkheads: one hull breach sinks the whole vessel. A ship with bulkheads: the same breach floods one compartment while the rest of the ship sails on.',
+    code: `// Resilience4j: separate bulkheads per downstream service
+BulkheadConfig config = BulkheadConfig.custom()
+    .maxConcurrentCalls(10)          // max 10 concurrent calls
+    .maxWaitDuration(Duration.ofMillis(100)) // reject if no slot in 100ms
+    .build();
+
+Bulkhead paymentBulkhead   = Bulkhead.of("payment",   config);
+Bulkhead inventoryBulkhead = Bulkhead.of("inventory", config);
+
+// Decorated calls — each has its own concurrency limit
+Supplier<Response> payCall =
+    Bulkhead.decorateSupplier(paymentBulkhead, () -> paymentService.charge());`,
+    tags: ['bulkhead', 'failure isolation', 'thread pool', 'semaphore', 'Resilience4j', 'Hystrix', 'blast radius', 'resource partitioning'],
+    related: ['rate-limiting', 'microservices', 'event-driven', 'saga-pattern']
+  },
+  {
+    id: 'choreography-vs-orchestration', cat: 'arch', name: 'Choreography vs Orchestration', aka: 'event choreography, workflow orchestration, Temporal, saga coordination',
+    summary: 'Two fundamentally different ways services coordinate work: implicit event reactions (choreography) vs an explicit central coordinator (orchestration).',
+    body: `When multiple services need to collaborate on a workflow, you have to decide who\'s in charge — or if anyone is.<br><br>
+<strong>Choreography — "everyone knows the dance":</strong><br>
+Services react to events without being told to. OrderService publishes <code>OrderPlaced</code>. PaymentService listens, charges the card, publishes <code>PaymentProcessed</code>. InventoryService listens, reserves stock, publishes <code>InventoryReserved</code>. No central brain.<br>
+✅ Fully decoupled — services don't know about each other<br>
+✅ Easy to add new participants (subscribe to existing events)<br>
+❌ Overall flow is implicit — hard to visualize, debug, or change<br>
+❌ Hard to handle failures and compensations<br><br>
+<strong>Orchestration — "someone calls the shots":</strong><br>
+A saga orchestrator (a workflow service or engine) explicitly calls each participant: "charge payment," "reserve inventory," "schedule shipment." It tracks state, handles failures, runs compensations.<br>
+✅ Flow is explicit and observable — you can see where any workflow instance is<br>
+✅ Easy to change the sequence, add steps, handle errors<br>
+❌ Creates a dependency on the orchestrator<br>
+❌ Orchestrator can become a bottleneck or single point of failure<br><br>
+<strong>Orchestration tools:</strong> Temporal (code-as-workflow, durable execution), AWS Step Functions (state machine JSON), Netflix Conductor, Camunda, Apache Airflow (data pipelines).<br><br>
+<strong>The real world:</strong> Most teams end up with a hybrid — choreography for simple integrations, orchestration for complex multi-step workflows that need observability and error handling.`,
+    analogy: 'Choreography: a jazz band improvising — each musician listens and responds. Orchestration: a symphony orchestra — the conductor explicitly cues each section. Jazz is flexible and emergent; the symphony is predictable and coordinated.',
+    tags: ['choreography', 'orchestration', 'Temporal', 'Step Functions', 'Conductor', 'workflow', 'saga', 'event-driven'],
+    related: ['saga-pattern', 'event-driven', 'microservices', 'actor-model']
+  },
 ];
 
 // ── STATE ──────────────────────────────────────────────────────────────────
