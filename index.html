@@ -370,6 +370,8 @@
   .bg-web { background: #fb923c; }
   .bg-sec { background: #f472b6; }
   .bg-lang { background: #a3e635; }
+  .c-embed { color: #06b6d4; }
+  .bg-embed { background: #06b6d4; }
 
   mark {
     background: rgba(74,240,160,0.25);
@@ -437,6 +439,7 @@ const CATS = [
   { id: 'web',    label: 'Web / API',    color: '#fb923c' },
   { id: 'sec',    label: 'Security',     color: '#f472b6' },
   { id: 'lang',   label: 'Paradigms',    color: '#a3e635' },
+  { id: 'embed',  label: 'Embedded',     color: '#06b6d4' },
 ];
 
 const TERMS = [
@@ -1170,6 +1173,394 @@ Functional concepts are now pervasive in OOP languages: Java streams, Python lis
 <strong>PostgreSQL full-text:</strong> Built-in tsvector/tsquery for basic full-text search without a separate system.`,
     tags: ['Elasticsearch', 'inverted index', 'BM25', 'TF-IDF', 'vector search', 'embeddings', 'RAG', 'pgvector'],
     related: ['sql-vs-nosql', 'indexing', 'caching']
+  },
+
+  // ── EMBEDDED SYSTEMS ───────────────────────────────────────────────────────
+  {
+    id: 'rtos', cat: 'embed', name: 'RTOS', aka: 'Real-Time Operating System, FreeRTOS, Zephyr, ThreadX',
+    summary: 'An OS designed to execute tasks within guaranteed time constraints — determinism is the defining feature.',
+    body: `An RTOS provides scheduling, synchronization, and communication primitives tuned for <strong>deterministic latency</strong>, not throughput. Unlike desktop OSes, the scheduler's job is to ensure the highest-priority ready task always runs — immediately.<br><br>
+<strong>Hard vs Soft Real-Time:</strong> Hard RT systems (airbags, pacemakers) must never miss a deadline. Soft RT systems (audio streaming) degrade gracefully.<br><br>
+<strong>Scheduling:</strong> Typically preemptive priority-based. Higher-priority tasks preempt lower ones instantly. Round-robin breaks ties.<br><br>
+<strong>Key primitives:</strong> Tasks/threads, semaphores (counting + binary), mutexes (with priority inheritance), queues, event flags, timers.<br><br>
+<strong>Priority Inversion:</strong> A high-priority task blocked waiting for a resource held by a low-priority task. Solved via priority inheritance (the mutex temporarily boosts the low-priority holder). Famous failure: Mars Pathfinder.<br><br>
+<strong>Common RTOSes:</strong> FreeRTOS (most widely used, open-source), Zephyr (Linux Foundation, modern), ThreadX (Azure RTOS), QNX (safety-critical), VxWorks (aerospace/defense).`,
+    analogy: 'Like an ER triage system: a heart attack patient (high-priority task) is seen immediately, bumping a sprained ankle (low-priority task) — and the system guarantees the response time.',
+    code: `// FreeRTOS task creation
+void vSensorTask(void *pvParams) {
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  for (;;) {
+    readSensor();
+    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // 10ms period
+  }
+}
+
+xTaskCreate(vSensorTask, "Sensor", 256, NULL, 3, NULL); // priority 3
+vTaskStartScheduler();`,
+    tags: ['FreeRTOS', 'Zephyr', 'scheduling', 'preemption', 'priority inversion', 'determinism', 'semaphore', 'mutex'],
+    related: ['bare-metal', 'embedded-linux', 'interrupts', 'watchdog']
+  },
+  {
+    id: 'bare-metal', cat: 'embed', name: 'Bare-Metal Programming', aka: 'No-OS, firmware, standalone',
+    summary: 'Writing firmware that runs directly on hardware with no operating system — full control, zero abstraction.',
+    body: `Bare-metal firmware owns the processor from reset. There is no OS scheduler, no dynamic allocation safety net, no system calls — just your code, the hardware, and the startup file.<br><br>
+<strong>Startup sequence:</strong> On power-on, the CPU fetches the reset vector from flash. The startup file (startup.s or startup.c) initializes the stack pointer, copies <code>.data</code> from flash to RAM, zeroes <code>.bss</code>, then calls <code>main()</code>.<br><br>
+<strong>Main loop:</strong> Bare-metal apps typically run a superloop (<code>while(1)</code>) polling peripherals, or an interrupt-driven architecture where the main loop sleeps and ISRs do the work.<br><br>
+<strong>When to use it:</strong> Ultra-low-power devices, hard real-time with microsecond deadlines, tiny MCUs (8/16-bit, &lt;32KB flash), or when you need complete determinism and zero overhead.<br><br>
+<strong>Trade-offs vs RTOS:</strong> No task isolation, no built-in synchronization, harder to manage complexity as the project grows. But zero overhead and total control.`,
+    analogy: 'Like cooking from raw ingredients with no appliances — you control every step, but you also have to manage every step.',
+    code: `// Minimal ARM Cortex-M bare-metal main
+#include <stdint.h>
+#define RCC_AHB1ENR  (*(volatile uint32_t*)0x40023830)
+#define GPIOA_MODER  (*(volatile uint32_t*)0x40020000)
+#define GPIOA_ODR    (*(volatile uint32_t*)0x40020014)
+
+int main(void) {
+  RCC_AHB1ENR  |= (1 << 0);   // enable GPIOA clock
+  GPIOA_MODER  |= (1 << 10);  // PA5 output mode
+  for (;;) {
+    GPIOA_ODR ^= (1 << 5);    // toggle LED
+    for (volatile int i = 0; i < 100000; i++); // delay
+  }
+}`,
+    tags: ['superloop', 'startup', 'reset vector', 'MCU', 'no-OS', 'flash', 'SRAM'],
+    related: ['rtos', 'linker-script', 'hal', 'mmio', 'interrupts']
+  },
+  {
+    id: 'embedded-linux', cat: 'embed', name: 'Embedded Linux', aka: 'Yocto, Buildroot, OpenWRT',
+    summary: 'A stripped-down, purpose-built Linux distribution running on resource-constrained embedded hardware.',
+    body: `Embedded Linux runs on anything from a Raspberry Pi to an industrial gateway. Unlike desktop Linux, every component is intentional — no package manager bloat, no unnecessary services.<br><br>
+<strong>Build systems:</strong><br>
+• <strong>Yocto Project:</strong> Highly configurable layer-based system. Generates a complete distribution from recipes. Industry standard for commercial products. Steep learning curve.<br>
+• <strong>Buildroot:</strong> Simpler, faster, Makefile-based. Great for smaller projects and learning. Less flexible than Yocto.<br><br>
+<strong>Boot chain:</strong> ROM bootloader → U-Boot (secondary bootloader) → Linux kernel → init system (systemd / BusyBox init) → application.<br><br>
+<strong>Device Tree:</strong> A data structure describing hardware topology (CPU, peripherals, memory maps) passed from bootloader to kernel. Replaces hard-coded board support code. File extension: <code>.dts</code> / <code>.dtb</code>.<br><br>
+<strong>Root filesystem:</strong> Typically a minimal BusyBox environment, or a custom rootfs generated by Yocto/Buildroot. Often read-only with an overlay for runtime state.<br><br>
+<strong>When to use:</strong> Networking, rich UI, complex protocols, or when you need a POSIX environment. Use RTOS or bare-metal when hard RT is required.`,
+    analogy: 'Like customizing a car from individual components rather than buying off the shelf — you pick exactly the engine, transmission, and features you need, nothing more.',
+    tags: ['Yocto', 'Buildroot', 'device tree', 'U-Boot', 'kernel', 'rootfs', 'BusyBox', 'MPU'],
+    related: ['bootloader', 'rtos', 'cross-compilation', 'device-drivers']
+  },
+  {
+    id: 'interrupts', cat: 'embed', name: 'Interrupts & ISRs', aka: 'IRQ, Interrupt Service Routine, NVIC, vectored interrupts',
+    summary: 'Hardware signals that asynchronously pause the CPU to handle time-critical events immediately.',
+    body: `An interrupt is a hardware signal that causes the CPU to suspend its current execution, save its state, and jump to an <strong>Interrupt Service Routine (ISR)</strong>. When the ISR returns, execution resumes where it left off.<br><br>
+<strong>Interrupt vector table:</strong> A fixed memory array mapping each interrupt source to its ISR address. On ARM Cortex-M, it lives at the start of flash (0x00000000).<br><br>
+<strong>NVIC (Nested Vectored Interrupt Controller):</strong> ARM's interrupt controller. Supports configurable priorities, nesting (higher-priority ISR can interrupt a lower-priority one), and tail-chaining (back-to-back ISRs without full context restore).<br><br>
+<strong>ISR rules:</strong><br>
+• Keep ISRs short and fast — they block the system<br>
+• Never block in an ISR (no mutexes, no delay loops)<br>
+• Use <code>volatile</code> for variables shared between ISR and main code<br>
+• Signal the main loop via flags, queues, or semaphores; do the heavy work outside the ISR<br><br>
+<strong>Interrupt latency:</strong> The time from interrupt assertion to first ISR instruction. ARM Cortex-M guarantees ≤12 cycles for zero-wait-state flash.`,
+    analogy: 'Like a phone call interrupting your work — you pause, handle the call (ISR), then return exactly where you left off. You don\'t write a novel during the call.',
+    code: `// STM32 GPIO interrupt ISR
+volatile uint8_t buttonPressed = 0;
+
+void EXTI0_IRQHandler(void) {
+  if (EXTI->PR & EXTI_PR_PR0) {
+    buttonPressed = 1;      // set flag, don't do heavy work here
+    EXTI->PR |= EXTI_PR_PR0; // clear pending bit
+  }
+}
+
+// Main loop handles the event
+while (1) {
+  if (buttonPressed) {
+    buttonPressed = 0;
+    handleButton();
+  }
+}`,
+    tags: ['IRQ', 'ISR', 'NVIC', 'interrupt latency', 'volatile', 'vector table', 'preemption'],
+    related: ['rtos', 'dma', 'mmio', 'volatile-kw', 'bare-metal']
+  },
+  {
+    id: 'mmio', cat: 'embed', name: 'Memory-Mapped I/O', aka: 'MMIO, hardware registers, peripheral registers',
+    summary: 'Hardware peripheral registers accessed via ordinary memory addresses — the foundation of embedded peripheral control.',
+    body: `In most microcontrollers, peripherals (GPIO, UART, SPI, timers) are controlled by <strong>reading and writing specific memory addresses</strong>. These aren't RAM — writes go directly to hardware logic.<br><br>
+<strong>Register map:</strong> The datasheet defines the address and bit layout of every register. E.g., the STM32F4 GPIOA output data register is at <code>0x40020014</code>. Bit 5 controls pin PA5.<br><br>
+<strong>volatile is mandatory:</strong> The compiler must not optimize away register accesses. Every read/write must reach the bus. Declare all MMIO pointers as <code>volatile</code>.<br><br>
+<strong>Bit manipulation patterns:</strong><br>
+• Set a bit: <code>reg |= (1 &lt;&lt; n)</code><br>
+• Clear a bit: <code>reg &amp;= ~(1 &lt;&lt; n)</code><br>
+• Toggle a bit: <code>reg ^= (1 &lt;&lt; n)</code><br>
+• Read a bit: <code>(reg &gt;&gt; n) &amp; 1</code><br><br>
+<strong>Read-modify-write hazard:</strong> Some registers have side effects on read (e.g., clearing interrupt flags). Read the datasheet carefully — some flags are cleared by writing 1 (W1C), not 0.`,
+    code: `// Direct MMIO register access
+#define GPIOA_ODR (*(volatile uint32_t*)0x40020014)
+#define GPIOA_IDR (*(volatile uint32_t*)0x40020010)
+
+// Set PA5 high
+GPIOA_ODR |= (1 << 5);
+
+// Read PA0 input
+uint8_t state = (GPIOA_IDR >> 0) & 1;
+
+// Toggle PA5
+GPIOA_ODR ^= (1 << 5);`,
+    tags: ['volatile', 'registers', 'GPIO', 'peripheral', 'bit manipulation', 'read-modify-write', 'W1C'],
+    related: ['bare-metal', 'volatile-kw', 'interrupts', 'dma', 'hal']
+  },
+  {
+    id: 'dma', cat: 'embed', name: 'DMA', aka: 'Direct Memory Access, DMA controller, DMAC',
+    summary: 'A hardware engine that transfers data between peripherals and memory without CPU involvement, freeing the processor for real work.',
+    body: `The CPU is slow at bulk data movement — it fetches, processes, and stores one word at a time. The <strong>DMA controller</strong> has a dedicated bus to move blocks of data autonomously.<br><br>
+<strong>How it works:</strong> You configure a DMA channel with a source address, destination address, transfer count, and data width. You trigger it (or it auto-triggers from a peripheral). The DMA raises an interrupt when done or on error.<br><br>
+<strong>Use cases:</strong><br>
+• ADC → memory (continuous sampling without CPU)<br>
+• Memory → SPI/UART TX buffer (zero-copy transmit)<br>
+• Memory → memory (fast memcpy equivalent)<br>
+• Audio: I2S → DMA → memory<br><br>
+<strong>Cache coherency:</strong> On MPUs with data caches, DMA bypasses the cache. You must explicitly clean (flush) the cache before DMA reads, and invalidate it after DMA writes to memory. Failure causes stale data bugs that are notoriously hard to diagnose.<br><br>
+<strong>Scatter-Gather DMA:</strong> Advanced mode where the DMA chains multiple transfer descriptors, enabling complex non-contiguous transfers without CPU intervention.`,
+    analogy: 'Like hiring a moving company — you hand them the pickup and delivery address, they move everything while you keep working. You get a call when it\'s done.',
+    code: `// STM32 DMA setup: ADC → memory circular mode
+DMA2_Stream0->CR  = 0;                     // disable
+DMA2_Stream0->PAR = (uint32_t)&ADC1->DR;   // peripheral: ADC data register
+DMA2_Stream0->M0AR= (uint32_t)adcBuffer;   // memory destination
+DMA2_Stream0->NDTR= ADC_BUF_LEN;           // transfer count
+DMA2_Stream0->CR  = DMA_SxCR_CIRC         // circular mode
+                  | DMA_SxCR_MINC         // memory increment
+                  | DMA_SxCR_TCIE;        // transfer complete interrupt
+DMA2_Stream0->CR |= DMA_SxCR_EN;          // enable`,
+    tags: ['DMA', 'DMAC', 'cache coherency', 'scatter-gather', 'ADC', 'zero-copy', 'throughput'],
+    related: ['interrupts', 'mmio', 'hal']
+  },
+  {
+    id: 'serial-protocols', cat: 'embed', name: 'Serial Protocols', aka: 'UART, SPI, I2C, CAN, RS-485',
+    summary: 'Standardized electrical and logical interfaces for chip-to-chip and board-to-board communication.',
+    body: `<strong>UART (Universal Async Receiver-Transmitter):</strong> Asynchronous, two wires (TX/RX), no shared clock. Both sides agree on baud rate. Simple but no multi-device support. Uses: debug consoles, GPS, Bluetooth modules.<br><br>
+<strong>SPI (Serial Peripheral Interface):</strong> Synchronous, 4 wires (MOSI, MISO, SCK, CS per device). Full-duplex. Fast (up to 50+ MHz). Master/slave. One CS line per device. Uses: flash memory, displays, ADCs, accelerometers.<br><br>
+<strong>I²C (Inter-Integrated Circuit):</strong> Synchronous, 2 wires (SDA, SCL), open-drain. Multi-master, multi-device on same bus via 7-bit addresses. Slower than SPI (&lt;5 MHz). Uses: sensors, EEPROMs, RTCs. Pull-up resistors required.<br><br>
+<strong>CAN (Controller Area Network):</strong> Differential pair (CANH/CANL), multi-master, message-based (not addressed). Built-in error detection and fault confinement. Designed for electrically noisy automotive/industrial environments. Uses: automotive ECUs, industrial automation, robotics.<br><br>
+<strong>RS-485:</strong> Differential, multi-drop, up to 32 nodes, long distances (1200m). Common in industrial Modbus networks.`,
+    code: `// SPI transaction (HAL abstraction)
+uint8_t txBuf[] = {0x9F};  // read ID command
+uint8_t rxBuf[3];
+
+HAL_GPIO_WritePin(CS_GPIO, CS_PIN, GPIO_PIN_RESET); // CS low
+HAL_SPI_TransmitReceive(&hspi1, txBuf, rxBuf, sizeof(txBuf), 10);
+HAL_GPIO_WritePin(CS_GPIO, CS_PIN, GPIO_PIN_SET);   // CS high
+// rxBuf now contains flash device ID`,
+    tags: ['UART', 'SPI', 'I2C', 'CAN', 'RS-485', 'baud rate', 'MOSI', 'MISO', 'differential'],
+    related: ['mmio', 'interrupts', 'dma', 'hal']
+  },
+  {
+    id: 'bootloader', cat: 'embed', name: 'Bootloader', aka: 'U-Boot, ROM bootloader, secondary bootloader',
+    summary: 'The first code executed on power-on — initializes critical hardware and loads the application firmware or OS kernel.',
+    body: `Every embedded system has a boot chain. The first stage is often baked into the chip (ROM bootloader). It hands off to a secondary bootloader (your code or U-Boot), which then loads the application.<br><br>
+<strong>Typical boot chain:</strong><br>
+1. <strong>ROM bootloader</strong> (chip vendor, immutable): validates and launches secondary bootloader<br>
+2. <strong>Secondary bootloader</strong> (U-Boot, custom): initializes DRAM, clocks, storage; loads kernel/application<br>
+3. <strong>Application or OS kernel</strong>: takes full control<br><br>
+<strong>U-Boot:</strong> The dominant open-source bootloader for embedded Linux. Supports network boot (TFTP), USB, eMMC, SD card, NOR/NAND flash. Provides an interactive shell for development.<br><br>
+<strong>Firmware Over-The-Air (FOTA/OTA):</strong> A/B partition schemes allow updating the inactive partition while the active one runs. On next boot, the bootloader switches slots. Rollback: if new firmware fails a health check, revert to old slot.<br><br>
+<strong>Secure Boot:</strong> Cryptographic chain of trust — each stage verifies the signature of the next before executing it. Prevents unauthorized firmware.`,
+    analogy: 'Like a hotel concierge at 6am: they unlock the building, turn on HVAC and lighting, run a safety check, then hand off to the day staff (your application).',
+    code: `# U-Boot environment variables for network boot
+setenv ipaddr   192.168.1.100
+setenv serverip 192.168.1.1
+setenv bootcmd  'tftp 0x80000000 uImage; bootm 0x80000000'
+saveenv
+boot`,
+    tags: ['U-Boot', 'secure boot', 'OTA', 'A/B partitions', 'TFTP', 'chain of trust', 'flash', 'DRAM init'],
+    related: ['embedded-linux', 'linker-script', 'jtag-debug']
+  },
+  {
+    id: 'hal', cat: 'embed', name: 'HAL / BSP', aka: 'Hardware Abstraction Layer, Board Support Package, CMSIS, platform layer',
+    summary: 'A software layer that decouples application logic from specific hardware, enabling portability across MCU families and boards.',
+    body: `Without a HAL, your application code is full of raw register addresses — tied to one specific chip. A HAL wraps those accesses behind a portable API.<br><br>
+<strong>Vendor HALs:</strong> STM32 HAL/LL (ST), nRF5 SDK (Nordic), ESP-IDF (Espressif), Zephyr device model. Generated by tools like STM32CubeMX. High-level, portable, but sometimes bloated.<br><br>
+<strong>CMSIS (Cortex Microcontroller Software Interface Standard):</strong> ARM's standardized layer for Cortex-M: CMSIS-Core (CPU access), CMSIS-Driver (peripheral APIs), CMSIS-RTOS (RTOS abstraction). Enables code reuse across vendors.<br><br>
+<strong>BSP (Board Support Package):</strong> Board-specific configuration on top of a HAL — pin mappings, clock configuration, external component drivers. The glue between generic HAL and your specific hardware.<br><br>
+<strong>Trade-offs:</strong><br>
+• Vendor HAL: easy to use, portable, slower (function call overhead, defensive checks)<br>
+• LL (Low-Layer) drivers: thin wrappers around registers, faster<br>
+• Raw registers: maximum control and performance, zero portability<br><br>
+Choose based on your latency requirements and how much portability you need.`,
+    code: `// STM32 HAL: toggle a GPIO pin
+HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+HAL_Delay(500);
+
+// vs. LL driver (thinner):
+LL_GPIO_TogglePin(GPIOA, LL_GPIO_PIN_5);
+
+// vs. bare register:
+GPIOA->ODR ^= GPIO_ODR_OD5;`,
+    tags: ['HAL', 'BSP', 'CMSIS', 'STM32', 'portability', 'abstraction', 'LL drivers', 'CubeMX'],
+    related: ['bare-metal', 'mmio', 'device-drivers', 'cross-compilation']
+  },
+  {
+    id: 'linker-script', cat: 'embed', name: 'Linker Script', aka: '.ld file, memory map, scatter file',
+    summary: 'A script that controls how the linker places code and data sections into the target device\'s physical memory regions.',
+    body: `The linker script is the authoritative map of your firmware's memory layout. Without it, the linker doesn't know where flash is, where RAM is, or how to arrange your code.<br><br>
+<strong>Key sections:</strong><br>
+• <code>.text</code> — executable code and constants → placed in flash<br>
+• <code>.data</code> — initialized global/static variables → stored in flash, copied to RAM at startup<br>
+• <code>.bss</code> — uninitialized globals/statics → zeroed in RAM at startup (no flash storage)<br>
+• <code>.stack</code> / <code>.heap</code> — runtime memory in RAM<br><br>
+<strong>MEMORY block:</strong> Defines named regions with origin and length — FLASH and SRAM for a typical MCU.<br><br>
+<strong>Startup file dependency:</strong> The startup code uses linker-defined symbols (<code>_sdata</code>, <code>_edata</code>, <code>_sidata</code>) to know the source (flash) and destination (RAM) for copying <code>.data</code>. If your linker script is wrong, your global variables will have garbage values.<br><br>
+<strong>Stack pointer:</strong> The reset vector's first word is the initial stack pointer value — also defined in the linker script as the top of SRAM.`,
+    code: `/* Minimal ARM Cortex-M linker script */
+MEMORY {
+  FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 512K
+  SRAM  (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
+}
+
+SECTIONS {
+  .text : {
+    KEEP(*(.isr_vector))   /* interrupt vector table first */
+    *(.text*)
+    *(.rodata*)
+  } > FLASH
+
+  .data : {
+    _sdata = .;
+    *(.data*)
+    _edata = .;
+  } > SRAM AT > FLASH      /* stored in flash, runs in SRAM */
+
+  _sidata = LOADADDR(.data); /* flash load address for startup copy */
+
+  .bss : {
+    _sbss = .;
+    *(.bss*)
+    _ebss = .;
+  } > SRAM
+}`,
+    tags: ['linker', '.text', '.data', '.bss', 'flash', 'SRAM', 'memory map', 'startup', 'scatter file'],
+    related: ['bare-metal', 'bootloader', 'cross-compilation']
+  },
+  {
+    id: 'watchdog', cat: 'embed', name: 'Watchdog Timer', aka: 'WDT, IWDG, WWDG, hardware watchdog',
+    summary: 'A hardware counter that resets the system if firmware fails to periodically "kick" it — your last line of defense against hangs.',
+    body: `A watchdog timer counts down independently of the CPU. If the firmware gets stuck in an infinite loop, deadlock, or hard fault and fails to reset the counter before it reaches zero, the WDT triggers a system reset.<br><br>
+<strong>Independent Watchdog (IWDG):</strong> Clocked from a separate low-speed oscillator (LSI). Runs even if the main clock fails. True last resort.<br><br>
+<strong>Windowed Watchdog (WWDG):</strong> Must be kicked within a specific time window — not too early, not too late. Catches timing-precise failures.<br><br>
+<strong>Kicking the watchdog:</strong> Write a refresh key to the watchdog register. Do this only from your main application loop or a dedicated watchdog task — never unconditionally in an ISR (that would defeat the purpose).<br><br>
+<strong>In RTOS systems:</strong> A common pattern is a watchdog task at the highest priority that collects "alive" tokens from all other tasks. It kicks the WDT only when all tasks have checked in. A stalled task means the WDT fires.<br><br>
+<strong>Safety systems:</strong> IEC 61508, ISO 26262, and similar standards require watchdog timers. A system that can be bricked by a software bug isn't certifiable.`,
+    analogy: 'Like a dead man\'s switch on a train — the driver must keep pressing the pedal to prove they\'re conscious. If they stop, the train stops.',
+    code: `// FreeRTOS watchdog pattern: task token checking
+uint32_t taskAlive = 0;
+
+// In each task:
+taskAlive |= TASK_SENSOR_BIT;   // set my bit
+
+// In watchdog task (highest priority):
+void vWatchdogTask(void *p) {
+  for (;;) {
+    if (taskAlive == ALL_TASK_BITS) {
+      HAL_IWDG_Refresh(&hiwdg); // kick
+      taskAlive = 0;
+    }
+    vTaskDelay(pdMS_TO_TICKS(500));
+  }
+}`,
+    tags: ['WDT', 'IWDG', 'WWDG', 'reset', 'deadlock', 'hang', 'safety', 'reliability', 'IEC 61508'],
+    related: ['rtos', 'interrupts', 'bare-metal']
+  },
+  {
+    id: 'power-management', cat: 'embed', name: 'Power Management', aka: 'Sleep modes, low-power, duty cycling, DVFS',
+    summary: 'Techniques to minimize energy consumption in battery-powered or energy-harvesting embedded systems.',
+    body: `Energy efficiency is a first-class constraint in embedded design. A coin-cell battery has ~240 mAh — a 10mA active device dies in a day; a 10μA sleeping device lasts years.<br><br>
+<strong>MCU sleep modes (ARM Cortex-M example):</strong><br>
+• <strong>Sleep:</strong> CPU halted, peripherals + SRAM active. Wakeup: any interrupt. Fastest resume.<br>
+• <strong>Stop:</strong> CPU + most peripherals off, SRAM retained. Wakeup: EXTI, RTC. μA range.<br>
+• <strong>Standby:</strong> Almost everything off, only RTC and backup registers retained. nA range. Full boot on wakeup.<br><br>
+<strong>Duty cycling:</strong> Wake up, do work, sleep. The ratio of active to sleep time determines average current. A device awake 1% of the time uses ~1% of active-mode power.<br><br>
+<strong>Clock gating:</strong> Disable peripheral clocks when not in use. On STM32, every peripheral clock is individually gated via RCC registers.<br><br>
+<strong>DVFS (Dynamic Voltage and Frequency Scaling):</strong> Reduce CPU voltage and frequency during light workloads. Power scales with V² × f.<br><br>
+<strong>Energy profiling tools:</strong> Nordic PPK2, Otii Arc, STM32 Current Consumption Calculator, oscilloscope + shunt resistor.`,
+    analogy: 'Like a laptop: screen dims after 2 minutes, sleeps after 5, hibernates after 30. The OS aggressively shuts down what isn\'t needed to extend battery life.',
+    tags: ['sleep modes', 'stop mode', 'standby', 'duty cycle', 'clock gating', 'DVFS', 'battery', 'μA', 'RTC', 'wakeup'],
+    related: ['rtos', 'watchdog', 'interrupts', 'bare-metal']
+  },
+  {
+    id: 'volatile-kw', cat: 'embed', name: 'volatile Keyword', aka: 'volatile qualifier, memory-mapped, ISR variable',
+    summary: 'A C/C++ type qualifier that prevents the compiler from optimizing away accesses to hardware registers or ISR-shared variables.',
+    body: `Without <code>volatile</code>, the compiler is free to assume a variable's value can only change through the code it can see. For hardware registers or variables modified in an ISR, this assumption is dead wrong.<br><br>
+<strong>Two critical use cases:</strong><br><br>
+1. <strong>Memory-mapped I/O registers:</strong> A hardware register's value changes independently of your code (a UART receive buffer fills up, a GPIO input changes). Without volatile, the compiler caches the first read in a CPU register and never re-reads memory — your code sees stale data forever.<br><br>
+2. <strong>ISR-shared flags:</strong> The main loop reads a flag that the ISR sets. Without volatile, the compiler may hoist the flag read out of the loop entirely — <code>while (!flag)</code> becomes an infinite loop.<br><br>
+<strong>What volatile does NOT do:</strong> It does not guarantee atomicity. On most MCUs, reading a 32-bit value from a 16-bit bus requires two bus cycles — an interrupt between them gives a torn read. Use atomic types, critical sections, or disable interrupts for multi-byte shared data.<br><br>
+<strong>Compiler flags:</strong> <code>-O2</code> and higher aggressively reorder and eliminate non-volatile accesses. Always compile embedded code with volatile where needed, and test at full optimization.`,
+    code: `// MMIO: compiler MUST read the register every time
+volatile uint32_t *const UART_SR = (volatile uint32_t*)0x40011000;
+while (!(*UART_SR & UART_SR_RXNE)); // wait for byte
+
+// ISR-shared flag: must be volatile
+volatile uint8_t dataReady = 0;
+
+void USART1_IRQHandler(void) {
+  rxBuf[rxIdx++] = USART1->DR;
+  if (rxIdx >= MSG_LEN) dataReady = 1; // ISR sets flag
+}
+
+int main(void) {
+  while (!dataReady);  // main loop reads flag — volatile required!
+  processData();
+}`,
+    tags: ['volatile', 'optimizer', 'ISR', 'MMIO', 'atomicity', 'torn read', 'cache', 'register'],
+    related: ['mmio', 'interrupts', 'bare-metal']
+  },
+  {
+    id: 'cross-compilation', cat: 'embed', name: 'Cross-Compilation', aka: 'toolchain, arm-none-eabi-gcc, target triplet',
+    summary: 'Building firmware on a host machine (e.g., x86 Linux) for a different target architecture (e.g., ARM Cortex-M).',
+    body: `Your laptop is x86_64. Your MCU is ARM Cortex-M4. The compiler produces machine code for the CPU it runs on — so you need a <strong>cross-compiler</strong> that runs on x86 but emits ARM instructions.<br><br>
+<strong>Target triplet:</strong> Identifies the target: <code>arm-none-eabi</code> = ARM architecture, no vendor, no OS (bare-metal), ELF ABI. The compiler binary is <code>arm-none-eabi-gcc</code>.<br><br>
+<strong>Key tools in the ARM toolchain:</strong><br>
+• <code>arm-none-eabi-gcc</code> — C compiler<br>
+• <code>arm-none-eabi-g++</code> — C++ compiler<br>
+• <code>arm-none-eabi-ld</code> — linker<br>
+• <code>arm-none-eabi-objcopy</code> — convert ELF → binary/hex for flashing<br>
+• <code>arm-none-eabi-size</code> — show flash/RAM usage<br>
+• <code>arm-none-eabi-gdb</code> — debugger (used with OpenOCD)<br><br>
+<strong>Build systems:</strong> CMake with a toolchain file is the modern standard. Makefiles are common in legacy projects. IDEs (STM32CubeIDE, SEGGER Embedded Studio) wrap the toolchain.<br><br>
+<strong>FPU flags:</strong> For Cortex-M4F, you must pass <code>-mfpu=fpv4-sp-d16 -mfloat-abi=hard</code> to use the hardware floating-point unit. Wrong flags = software FP emulation = 10× slower.`,
+    code: `# Compile for STM32F4 (Cortex-M4 with FPU)
+arm-none-eabi-gcc \\
+  -mcpu=cortex-m4 -mthumb \\
+  -mfpu=fpv4-sp-d16 -mfloat-abi=hard \\
+  -O2 -Wall \\
+  -T STM32F407VG.ld \\
+  -o firmware.elf main.c startup.s
+
+# Convert to binary for flashing
+arm-none-eabi-objcopy -O binary firmware.elf firmware.bin
+
+# Check flash/RAM usage
+arm-none-eabi-size firmware.elf`,
+    tags: ['toolchain', 'arm-none-eabi', 'GCC', 'CMake', 'ELF', 'cross-compiler', 'FPU', 'target triplet'],
+    related: ['jtag-debug', 'linker-script', 'bare-metal', 'embedded-linux']
+  },
+  {
+    id: 'jtag-debug', cat: 'embed', name: 'JTAG / SWD Debugging', aka: 'JTAG, SWD, OpenOCD, GDB, J-Link, ST-Link',
+    summary: 'Hardware debug interfaces that enable step-debugging, memory inspection, breakpoints, and flash programming on embedded targets.',
+    body: `Software debugging tools like <code>printf</code> are limited — they need a working UART and don't help when the system crashes at startup. JTAG and SWD give you a hardware window into the running CPU.<br><br>
+<strong>JTAG:</strong> IEEE 1149.1 standard. 4-5 wires (TDI, TDO, TCK, TMS, optional TRST). Chain-able — multiple devices on one JTAG chain. Supports boundary scan (board-level hardware testing).<br><br>
+<strong>SWD (Serial Wire Debug):</strong> ARM's 2-wire alternative (SWDIO, SWCLK). Functionally equivalent to JTAG for debugging Cortex-M. Preferred for space-constrained boards.<br><br>
+<strong>Typical debug stack:</strong><br>
+• <strong>Probe hardware:</strong> ST-Link (STM32 boards), J-Link (Segger), CMSIS-DAP<br>
+• <strong>OpenOCD:</strong> Open-source server bridging probe hardware to GDB<br>
+• <strong>GDB:</strong> GNU debugger — set breakpoints, inspect memory, watch variables, step through code<br><br>
+<strong>Key capabilities:</strong> Hardware breakpoints (no code modification, works in flash), watchpoints (break on memory read/write), live variable viewing, flash programming, core dump on fault.<br><br>
+<strong>Semihosting:</strong> Mechanism for <code>printf</code> output over the debug interface — no UART needed. Useful for early bringup.`,
+    code: `# Start OpenOCD server (ST-Link + STM32F4)
+openocd -f interface/stlink.cfg -f target/stm32f4x.cfg
+
+# In another terminal, connect GDB
+arm-none-eabi-gdb firmware.elf
+(gdb) target remote localhost:3333
+(gdb) monitor reset halt
+(gdb) load                    # flash the firmware
+(gdb) break main
+(gdb) continue
+(gdb) print myVariable
+(gdb) x/16xw 0x20000000      # dump 16 words from SRAM`,
+    tags: ['JTAG', 'SWD', 'GDB', 'OpenOCD', 'J-Link', 'ST-Link', 'breakpoints', 'watchpoints', 'semihosting', 'flash'],
+    related: ['cross-compilation', 'bare-metal', 'bootloader']
   },
 ];
 
