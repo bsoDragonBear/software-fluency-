@@ -377,6 +377,27 @@
     border-radius: 2px;
     padding: 0 1px;
   }
+
+  #random-btn {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    align-self: center;
+  }
+
+  #random-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 </style>
 </head>
 <body>
@@ -385,6 +406,7 @@
   <div class="header-top">
     <span class="logo">// ref</span>
     <h1>Software <span>Fluency</span></h1>
+    <button id="random-btn" onclick="pickRandom()">⚄ Random</button>
   </div>
   <div class="search-bar">
     <span class="search-icon">⌕</span>
@@ -1304,6 +1326,19 @@ function renderDetail(term) {
       }
     };
   });
+}
+
+// ── RANDOM ─────────────────────────────────────────────────────────────────
+function pickRandom() {
+  const term = TERMS[Math.floor(Math.random() * TERMS.length)];
+  currentTerm = term;
+  currentCat = 'all';
+  searchQuery = '';
+  document.getElementById('search').value = '';
+  renderTabs();
+  renderList();
+  renderDetail(term);
+  document.querySelector('.term-item.active')?.scrollIntoView({ block: 'nearest' });
 }
 
 // ── SEARCH ─────────────────────────────────────────────────────────────────
