@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Software Fluency — Reference</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f12;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: #252a38;
+    --accent: #4af0a0;
+    --accent2: #3db8ff;
+    --accent3: #ff6b6b;
+    --accent4: #ffd166;
+    --text: #e2e8f0;
+    --text-dim: #7a8499;
+    --text-faint: #3d4459;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    padding: 28px 32px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  h1 span { color: var(--accent); font-weight: 600; }
+
+  /* SEARCH */
+  .search-bar {
+    position: relative;
+    margin-bottom: 0;
+  }
+
+  .search-bar input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 11px 14px 11px 38px;
+    outline: none;
+    border-radius: 6px 6px 0 0;
+    transition: border-color 0.2s;
+  }
+
+  .search-bar input:focus { border-color: var(--accent); }
+  .search-bar input::placeholder { color: var(--text-faint); }
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-faint);
+    font-size: 14px;
+  }
+
+  #result-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 0;
+  }
+
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .tab:hover { color: var(--text-dim); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 160px);
+  }
+
+  /* TERM LIST */
+  .term-list {
+    width: 280px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .term-list::-webkit-scrollbar { width: 4px; }
+  .term-list::-webkit-scrollbar-track { background: transparent; }
+  .term-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .term-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .term-item:hover { background: var(--surface2); }
+  .term-item.active { background: var(--surface2); border-left: 2px solid var(--accent); padding-left: 14px; }
+
+  .term-cat-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+
+  .term-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .term-item.active .term-name { color: var(--accent); }
+
+  .term-preview {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 2px;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  /* DETAIL PANEL */
+  .detail {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 40px;
+  }
+
+  .detail::-webkit-scrollbar { width: 4px; }
+  .detail::-webkit-scrollbar-track { background: transparent; }
+  .detail::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-faint);
+    text-align: center;
+  }
+
+  .detail-empty .big { font-size: 48px; margin-bottom: 16px; }
+  .detail-empty p { font-size: 13px; font-family: var(--mono); }
+
+  .detail-cat {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .detail-title {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .detail-aka {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-bottom: 24px;
+  }
+
+  .detail-body {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text-dim);
+    max-width: 680px;
+    margin-bottom: 28px;
+  }
+
+  .detail-body strong { color: var(--text); font-weight: 500; }
+
+  .detail-section {
+    margin-bottom: 24px;
+    max-width: 680px;
+  }
+
+  .detail-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .detail-section p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  .detail-section p + p { margin-top: 8px; }
+
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tag:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    line-height: 1.6;
+    margin-top: 10px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .analogy-block {
+    background: linear-gradient(135deg, rgba(74,240,160,0.04), rgba(61,184,255,0.04));
+    border: 1px solid rgba(74,240,160,0.15);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.65;
+    margin-top: 10px;
+  }
+
+  .analogy-block .label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  /* EMPTY SEARCH */
+  .no-results {
+    padding: 24px 16px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  /* CATEGORY COLORS */
+  .c-arch { color: #4af0a0; }
+  .c-dsa { color: #3db8ff; }
+  .c-dist { color: #ff6b6b; }
+  .c-devops { color: #ffd166; }
+  .c-db { color: #c084fc; }
+  .c-web { color: #fb923c; }
+  .c-sec { color: #f472b6; }
+  .c-lang { color: #a3e635; }
+
+  .bg-arch { background: #4af0a0; }
+  .bg-dsa { background: #3db8ff; }
+  .bg-dist { background: #ff6b6b; }
+  .bg-devops { background: #ffd166; }
+  .bg-db { background: #c084fc; }
+  .bg-web { background: #fb923c; }
+  .bg-sec { background: #f472b6; }
+  .bg-lang { background: #a3e635; }
+
+  mark {
+    background: rgba(74,240,160,0.25);
+    color: var(--accent);
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <span class="logo">// ref</span>
+    <h1>Software <span>Fluency</span></h1>
+  </div>
+  <div class="search-bar">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search" placeholder="Search terms, concepts, patterns..." autocomplete="off" spellcheck="false">
+    <span id="result-count"></span>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<div class="main">
+  <div class="term-list" id="term-list"></div>
+  <div class="detail" id="detail">
+    <div class="detail-empty">
+      <div class="big">⌨</div>
+      <p>Select a term to explore it.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS = [
+  { id: 'all',    label: 'All',          color: '#7a8499' },
+  { id: 'arch',   label: 'Architecture', color: '#4af0a0' },
+  { id: 'dsa',    label: 'Data Structs', color: '#3db8ff' },
+  { id: 'dist',   label: 'Distributed',  color: '#ff6b6b' },
+  { id: 'devops', label: 'DevOps/CI',    color: '#ffd166' },
+  { id: 'db',     label: 'Databases',    color: '#c084fc' },
+  { id: 'web',    label: 'Web / API',    color: '#fb923c' },
+  { id: 'sec',    label: 'Security',     color: '#f472b6' },
+  { id: 'lang',   label: 'Paradigms',    color: '#a3e635' },
+];
+
+const TERMS = [
+  // ── ARCHITECTURE ──────────────────────────────────────────────────────────
+  {
+    id: 'solid', cat: 'arch', name: 'SOLID Principles', aka: 'S O L I D',
+    summary: 'Five foundational object-oriented design principles that produce maintainable, extensible code.',
+    body: `<strong>SOLID</strong> is an acronym for five design principles that guide how software components should be structured and relate to each other. They are language-agnostic and apply at the class/module level.<br><br>
+<strong>S — Single Responsibility:</strong> A class should have one reason to change. Don't mix UI logic with business logic with persistence.<br>
+<strong>O — Open/Closed:</strong> Open for extension, closed for modification. Add behavior via new code, not by changing existing code.<br>
+<strong>L — Liskov Substitution:</strong> Subtypes must be substitutable for their base types without breaking correctness.<br>
+<strong>I — Interface Segregation:</strong> Clients shouldn't depend on interfaces they don't use. Prefer many small interfaces over one fat one.<br>
+<strong>D — Dependency Inversion:</strong> Depend on abstractions, not concretions. High-level modules shouldn't import low-level ones directly.`,
+    analogy: 'Like circuit board design: each module does one thing (S), you add capability via daughter boards not rewiring the motherboard (O), and you communicate through defined connector standards not direct wire bonds (D).',
+    tags: ['OOP', 'design principles', 'modularity', 'coupling'],
+    related: ['dependency-injection', 'design-patterns', 'coupling']
+  },
+  {
+    id: 'design-patterns', cat: 'arch', name: 'Design Patterns', aka: 'GoF Patterns',
+    summary: 'Reusable solutions to commonly occurring problems in software design — a shared vocabulary for developers.',
+    body: `Design patterns are named, documented templates for solving recurring design problems. They come in three families:<br><br>
+<strong>Creational</strong> (how objects are created): Factory, Abstract Factory, Singleton, Builder, Prototype.<br>
+<strong>Structural</strong> (how objects are composed): Adapter, Bridge, Composite, Decorator, Facade, Proxy.<br>
+<strong>Behavioral</strong> (how objects communicate): Observer, Strategy, Command, Iterator, State, Template Method.<br><br>
+The value isn't copy-pasting code — it's having a name for a solution so a team can say "let's use an Observer here" and everyone understands immediately.`,
+    analogy: 'Like standard schematic symbols — you could draw every transistor from scratch, but using standard symbols lets everyone read the schematic instantly.',
+    tags: ['GoF', 'OOP', 'factory', 'observer', 'singleton', 'decorator'],
+    related: ['solid', 'coupling', 'dependency-injection']
+  },
+  {
+    id: 'microservices', cat: 'arch', name: 'Microservices', aka: 'Service-Oriented Architecture (SOA)',
+    summary: 'An architectural style that structures an application as a collection of small, independently deployable services, each owning its own data.',
+    body: `In a microservices architecture, a large application is decomposed into small services that each do one thing. Each service:<br>
+• Runs in its own process<br>
+• Has its own database (no shared state)<br>
+• Communicates over a network (HTTP/REST, gRPC, or message queues)<br>
+• Can be deployed, scaled, and updated independently<br><br>
+<strong>Contrast with a Monolith</strong> — a single deployable unit where all code runs in one process. Monoliths are simpler early on; microservices pay off at scale.<br><br>
+<strong>Tradeoffs:</strong> Microservices add network latency, distributed system complexity, and operational overhead in exchange for independent scaling and fault isolation.`,
+    analogy: 'Like a distributed embedded system with multiple MCUs on a CAN bus, each handling a specific subsystem — vs. one giant MCU trying to do everything.',
+    tags: ['distributed', 'scalability', 'decomposition', 'API'],
+    related: ['api-gateway', 'event-driven', 'docker', 'service-mesh']
+  },
+  {
+    id: 'coupling', cat: 'arch', name: 'Coupling & Cohesion', aka: 'Tight vs. Loose Coupling',
+    summary: 'Two key metrics for software quality: coupling measures interdependency between modules; cohesion measures how focused a module is.',
+    body: `<strong>Coupling</strong> describes how much one module depends on the internals of another. Low (loose) coupling is desirable — changes in one module don't ripple through the system.<br><br>
+<strong>Cohesion</strong> describes how related the responsibilities within a single module are. High cohesion is desirable — a module that does one coherent thing is easier to understand and test.<br><br>
+The mantra: <em>low coupling, high cohesion</em>. A module that is tightly coupled to many others and handles unrelated concerns is a maintenance nightmare.`,
+    code: `// Tight coupling — UserService knows DB internals\nclass UserService:\n    def get_user(id):\n        return db.execute("SELECT * FROM users WHERE id=?", id)\n\n// Loose coupling — depends on abstraction\nclass UserService:\n    def __init__(self, repo: UserRepository):\n        self.repo = repo\n    def get_user(id):\n        return self.repo.find(id)`,
+    tags: ['modularity', 'dependency', 'abstraction'],
+    related: ['solid', 'dependency-injection', 'design-patterns']
+  },
+  {
+    id: 'dependency-injection', cat: 'arch', name: 'Dependency Injection', aka: 'DI / IoC',
+    summary: 'A pattern where a component receives its dependencies from outside rather than creating them itself — enabling testability and flexibility.',
+    body: `Dependency Injection (DI) is a form of Inversion of Control (IoC). Instead of a class constructing its collaborators (tight coupling), they are passed in (injected) at construction or method call time.<br><br>
+<strong>Why it matters:</strong> You can inject a real database in production and a mock database in tests. You can swap implementations without changing the class that uses them.<br><br>
+<strong>DI Containers / Frameworks</strong> (like Spring, .NET's built-in IoC, or Python's dependency-injector) automate wiring dependencies across large codebases.`,
+    code: `// Without DI — class creates its own dependency\nclass OrderService:\n    def __init__(self):\n        self.db = PostgresDB()   # hard-coded!\n\n// With DI — dependency is injected\nclass OrderService:\n    def __init__(self, db: Database):\n        self.db = db   # any impl works`,
+    tags: ['IoC', 'testability', 'inversion of control', 'mocking'],
+    related: ['coupling', 'solid', 'design-patterns']
+  },
+  {
+    id: 'event-driven', cat: 'arch', name: 'Event-Driven Architecture', aka: 'EDA / Message-Driven',
+    summary: 'Components communicate by emitting and reacting to events rather than calling each other directly — enabling decoupling and async processing.',
+    body: `In EDA, producers emit events (things that happened) onto a bus or queue. Consumers subscribe to events they care about and react independently. Neither side knows about the other.<br><br>
+<strong>Key patterns:</strong><br>
+• <strong>Pub/Sub</strong>: Publisher emits to a topic; all subscribers receive it (broadcast).<br>
+• <strong>Message Queue</strong>: Message sits in a queue until exactly one consumer picks it up (work distribution).<br>
+• <strong>Event Sourcing</strong>: The system's state is derived by replaying a log of all events ever emitted — the log is the truth.<br><br>
+<strong>Tools:</strong> Kafka, RabbitMQ, AWS SNS/SQS, NATS.`,
+    analogy: 'Like an interrupt-driven embedded system — peripherals assert an IRQ (event) without knowing who handles it; the handler reacts asynchronously.',
+    tags: ['async', 'pub/sub', 'Kafka', 'message queue', 'decoupling'],
+    related: ['microservices', 'cqrs', 'kafka']
+  },
+  {
+    id: 'cqrs', cat: 'arch', name: 'CQRS', aka: 'Command Query Responsibility Segregation',
+    summary: 'Separate the read and write paths of a system into distinct models — optimizing each independently.',
+    body: `CQRS says that operations that <em>change state</em> (Commands) and operations that <em>read state</em> (Queries) should be handled by different models, potentially different services, and even different databases.<br><br>
+<strong>Write side (Commands):</strong> Validated, enforces business rules, writes to a normalized DB or event log.<br>
+<strong>Read side (Queries):</strong> Serves denormalized, pre-computed views optimized for the query patterns of the UI.<br><br>
+Often paired with <strong>Event Sourcing</strong>: commands produce events; read-side projections are built from those events.<br><br>
+<strong>Tradeoff:</strong> Complexity — eventual consistency between write and read sides must be managed.`,
+    tags: ['event sourcing', 'read/write separation', 'scalability'],
+    related: ['event-driven', 'microservices']
+  },
+
+  // ── DATA STRUCTURES & ALGORITHMS ──────────────────────────────────────────
+  {
+    id: 'big-o', cat: 'dsa', name: 'Big-O Notation', aka: 'Asymptotic Complexity',
+    summary: 'A mathematical notation describing how an algorithm\'s time or space requirements grow as input size grows.',
+    body: `Big-O describes the <em>worst-case growth rate</em> of an algorithm, ignoring constants and lower-order terms.<br><br>
+<strong>Common complexities (best → worst):</strong><br>
+O(1) — Constant: array index access<br>
+O(log n) — Logarithmic: binary search<br>
+O(n) — Linear: linear scan<br>
+O(n log n) — Linearithmic: merge sort, heap sort<br>
+O(n²) — Quadratic: nested loops, bubble sort<br>
+O(2ⁿ) — Exponential: brute-force combinatorics<br><br>
+When engineers say "this is O(n²), it won't scale" — they mean the algorithm becomes unusably slow as data grows.`,
+    analogy: 'Like interrupt latency analysis: O(1) is a fixed-latency ISR; O(n) is looping through all devices to poll; O(n²) is checking every device pair.',
+    tags: ['complexity', 'time complexity', 'space complexity', 'performance'],
+    related: ['sorting', 'hash-map', 'binary-search-tree']
+  },
+  {
+    id: 'hash-map', cat: 'dsa', name: 'Hash Map / Hash Table', aka: 'Dictionary, Map, Associative Array',
+    summary: 'A data structure that maps keys to values using a hash function for O(1) average-case lookup, insert, and delete.',
+    body: `A hash map applies a hash function to a key to compute an index into an underlying array where the value is stored. This gives O(1) average performance for get/set/delete.<br><br>
+<strong>Collision:</strong> Two keys hash to the same index. Resolved via chaining (linked list at each bucket) or open addressing (probe for next free slot).<br><br>
+<strong>Load factor:</strong> Ratio of entries to buckets. When too high, the table rehashes (resizes) — amortized O(1) overall.<br><br>
+In Python: <code>dict</code>. In C++: <code>unordered_map</code>. In Java: <code>HashMap</code>. In Rust: <code>HashMap</code>.`,
+    code: `# O(1) lookup\nstore = {}\nstore["session_id"] = "abc123"\nvalue = store["session_id"]  # instant`,
+    tags: ['O(1)', 'key-value', 'collision', 'hashing'],
+    related: ['big-o', 'binary-search-tree']
+  },
+  {
+    id: 'binary-search-tree', cat: 'dsa', name: 'Trees & Graphs', aka: 'BST, Trie, DAG',
+    summary: 'Hierarchical and relational data structures fundamental to search, routing, parsing, and dependency resolution.',
+    body: `<strong>Binary Search Tree (BST):</strong> Each node has left (smaller) and right (larger) children. O(log n) search when balanced. Used for sorted sets, range queries.<br><br>
+<strong>Balanced BST variants:</strong> AVL tree, Red-Black tree — self-balance to guarantee O(log n). Used in most language stdlib sorted maps.<br><br>
+<strong>Trie (prefix tree):</strong> Each edge is a character. Used for autocomplete, IP routing tables.<br><br>
+<strong>Graph:</strong> Nodes + edges. Directed (edges have direction) or undirected. Acyclic (DAG) or cyclic.<br>
+• <strong>BFS</strong> (Breadth-First Search): shortest path in unweighted graph.<br>
+• <strong>DFS</strong> (Depth-First Search): cycle detection, topological sort, connected components.<br>
+• <strong>Dijkstra's:</strong> shortest path in weighted graph.`,
+    tags: ['BST', 'graph', 'BFS', 'DFS', 'trie', 'DAG'],
+    related: ['big-o', 'sorting']
+  },
+  {
+    id: 'sorting', cat: 'dsa', name: 'Sorting Algorithms', aka: 'Merge Sort, Quick Sort, Heap Sort',
+    summary: 'Algorithms that reorder collections — each with different time/space tradeoffs and stability properties.',
+    body: `<strong>Merge Sort:</strong> Divide-and-conquer. Always O(n log n). Stable (equal elements keep order). Requires O(n) extra space. Preferred when stability matters.<br><br>
+<strong>Quick Sort:</strong> Pick a pivot, partition. Average O(n log n), worst O(n²). In-place. Fastest in practice on cache-friendly data.<br><br>
+<strong>Heap Sort:</strong> O(n log n) guaranteed. In-place. Not stable. Rarely fastest but predictable.<br><br>
+<strong>Counting/Radix Sort:</strong> O(n) — non-comparison sorts when keys are integers in a bounded range.<br><br>
+Most language stdlib sorts (Timsort in Python/Java) are hybrid algorithms optimized for real-world data patterns.`,
+    tags: ['merge sort', 'quicksort', 'O(n log n)', 'stable sort'],
+    related: ['big-o', 'hash-map']
+  },
+  {
+    id: 'dynamic-programming', cat: 'dsa', name: 'Dynamic Programming', aka: 'DP / Memoization',
+    summary: 'Breaking a problem into overlapping subproblems and caching their solutions to avoid redundant computation.',
+    body: `DP applies when a problem has two properties:<br>
+1. <strong>Optimal substructure</strong>: optimal solution is built from optimal solutions to subproblems.<br>
+2. <strong>Overlapping subproblems</strong>: the same subproblem is solved many times.<br><br>
+<strong>Top-down (Memoization):</strong> Recursive solution + a cache. First call solves it; subsequent calls return cached result.<br><br>
+<strong>Bottom-up (Tabulation):</strong> Iteratively fill a table from base cases up. Usually faster due to no recursion overhead.<br><br>
+Classic problems: Fibonacci, longest common subsequence, shortest path (Bellman-Ford), knapsack, coin change.`,
+    code: `# Fibonacci with memoization: O(n) vs O(2^n)\ncache = {}\ndef fib(n):\n    if n in cache: return cache[n]\n    if n <= 1: return n\n    cache[n] = fib(n-1) + fib(n-2)\n    return cache[n]`,
+    tags: ['memoization', 'recursion', 'optimization', 'tabulation'],
+    related: ['big-o', 'sorting']
+  },
+
+  // ── DISTRIBUTED SYSTEMS ───────────────────────────────────────────────────
+  {
+    id: 'cap-theorem', cat: 'dist', name: 'CAP Theorem', aka: 'Brewer\'s Theorem',
+    summary: 'A distributed system can guarantee at most two of three properties: Consistency, Availability, and Partition Tolerance.',
+    body: `<strong>Consistency (C):</strong> Every read returns the most recent write (or an error). All nodes see the same data at the same time.<br><br>
+<strong>Availability (A):</strong> Every request receives a response — not guaranteed to be the latest data.<br><br>
+<strong>Partition Tolerance (P):</strong> The system continues operating even if network messages between nodes are lost.<br><br>
+Since network partitions always happen in real systems, P is non-negotiable. So you choose: <strong>CP</strong> (consistent but may be unavailable during a partition) or <strong>AP</strong> (always responds but may return stale data).<br><br>
+<strong>Examples:</strong> HBase, ZooKeeper → CP. Cassandra, DynamoDB → AP.`,
+    analogy: 'During a network split between two MCU nodes, you choose: halt and wait for consensus (CP) or proceed with potentially stale local state (AP).',
+    tags: ['consistency', 'availability', 'partition', 'distributed'],
+    related: ['consensus', 'replication', 'eventual-consistency']
+  },
+  {
+    id: 'eventual-consistency', cat: 'dist', name: 'Eventual Consistency', aka: 'BASE vs ACID',
+    summary: 'A consistency model where replicas may diverge temporarily but will converge to the same value given no new updates.',
+    body: `Eventual consistency is the tradeoff you accept in AP systems. Replicas might disagree for a window of time, but they will converge.<br><br>
+<strong>BASE:</strong> Basically Available, Soft state, Eventually consistent — the distributed alternative to relational ACID.<br><br>
+<strong>Conflicts:</strong> When two nodes accept writes to the same key during a partition, you need a conflict resolution strategy:<br>
+• Last-Write-Wins (LWW): timestamp-based<br>
+• CRDTs: data structures that merge conflict-free by design<br>
+• Application-level merge logic<br><br>
+DNS is a classic example — updates propagate eventually but aren't instantly visible everywhere.`,
+    tags: ['BASE', 'ACID', 'conflict resolution', 'CRDT'],
+    related: ['cap-theorem', 'replication', 'consensus']
+  },
+  {
+    id: 'consensus', cat: 'dist', name: 'Consensus Algorithms', aka: 'Raft, Paxos',
+    summary: 'Algorithms that enable distributed nodes to agree on a single value or log entry despite failures.',
+    body: `Consensus is the core problem of distributed systems: how do multiple nodes agree on a value when any node can fail or messages can be lost?<br><br>
+<strong>Raft:</strong> More understandable than Paxos. Elects a leader via randomized election timeouts. The leader accepts writes, replicates the log, and commits once a majority confirms. Used by etcd, CockroachDB, Consul.<br><br>
+<strong>Paxos:</strong> Original consensus algorithm. Hard to understand; many production systems use Multi-Paxos variants.<br><br>
+<strong>Byzantine Fault Tolerance (BFT):</strong> Handles nodes that actively lie or misbehave (not just crash). Required for blockchain; very expensive.`,
+    tags: ['Raft', 'Paxos', 'leader election', 'quorum', 'BFT'],
+    related: ['cap-theorem', 'replication']
+  },
+  {
+    id: 'replication', cat: 'dist', name: 'Replication & Sharding', aka: 'Horizontal Scaling',
+    summary: 'Replication copies data across nodes for availability; sharding partitions data across nodes for scale.',
+    body: `<strong>Replication:</strong> The same data lives on multiple nodes.<br>
+• <em>Leader-Follower (Primary-Replica):</em> All writes go to leader, replicated to followers. Followers handle reads.<br>
+• <em>Multi-Leader:</em> Multiple nodes accept writes. Conflict resolution required.<br>
+• <em>Leaderless (Dynamo-style):</em> Any node accepts writes; quorum (W + R > N) ensures consistency.<br><br>
+<strong>Sharding (Partitioning):</strong> Each shard holds a subset of data (e.g., users A–M on shard 1, N–Z on shard 2). Allows horizontal scale-out. The hard problem is <em>rebalancing</em> when you add nodes — consistent hashing minimizes data movement.`,
+    tags: ['leader-follower', 'quorum', 'consistent hashing', 'sharding'],
+    related: ['cap-theorem', 'consensus', 'eventual-consistency']
+  },
+  {
+    id: 'load-balancer', cat: 'dist', name: 'Load Balancing', aka: 'L4/L7 Load Balancer, Reverse Proxy',
+    summary: 'Distributing incoming traffic across multiple backend instances to maximize throughput and minimize latency.',
+    body: `A load balancer sits in front of a pool of servers and routes each request to one of them.<br><br>
+<strong>Algorithms:</strong><br>
+• Round Robin: requests distributed in order<br>
+• Least Connections: route to least busy server<br>
+• Consistent Hashing: same client always routes to same server (sticky sessions)<br>
+• Weighted: some servers get more traffic based on capacity<br><br>
+<strong>L4 vs L7:</strong><br>
+• L4 (Transport): routes by IP/TCP without inspecting payload. Fast.<br>
+• L7 (Application): inspects HTTP headers/URLs; can route by path (/api vs /static), do SSL termination, inject headers. More powerful but more overhead.<br><br>
+<strong>Tools:</strong> Nginx, HAProxy, AWS ALB/NLB, Envoy.`,
+    tags: ['reverse proxy', 'round robin', 'L4', 'L7', 'nginx', 'HAProxy'],
+    related: ['microservices', 'api-gateway', 'service-mesh']
+  },
+  {
+    id: 'service-mesh', cat: 'dist', name: 'Service Mesh', aka: 'Istio, Linkerd, Envoy',
+    summary: 'A dedicated infrastructure layer that handles service-to-service communication — providing observability, security, and traffic control.',
+    body: `In a microservices deployment, each service needs to: find others (discovery), communicate securely (mTLS), retry on failure, observe latency/errors, and apply traffic rules. A service mesh handles all of this.<br><br>
+<strong>Sidecar pattern:</strong> A proxy (like Envoy) runs alongside each service container in the same pod. All traffic flows through the proxy. The service itself doesn't change.<br><br>
+<strong>Control Plane:</strong> Configures all the sidecars — routing rules, certificates, policies.<br><br>
+<strong>Capabilities:</strong> mTLS between services, circuit breaking, retries, timeouts, traffic shifting (canary deploys), distributed tracing.`,
+    tags: ['sidecar', 'Envoy', 'Istio', 'mTLS', 'service discovery'],
+    related: ['microservices', 'load-balancer', 'docker']
+  },
+
+  // ── DEVOPS / CI-CD ────────────────────────────────────────────────────────
+  {
+    id: 'docker', cat: 'devops', name: 'Containers & Docker', aka: 'OCI, Container Runtime',
+    summary: 'Packaging an application and all its dependencies into a portable, isolated unit that runs consistently anywhere.',
+    body: `A container bundles an application with its libraries and runtime into a single image. Unlike a VM, it shares the host OS kernel — making it lightweight and fast to start.<br><br>
+<strong>Key concepts:</strong><br>
+• <strong>Dockerfile:</strong> Recipe for building an image. Layer-by-layer instructions.<br>
+• <strong>Image:</strong> Immutable snapshot. Tagged and versioned. Stored in a registry (Docker Hub, ECR, GHCR).<br>
+• <strong>Container:</strong> A running instance of an image. Ephemeral by default.<br>
+• <strong>Registry:</strong> Remote store for images.<br>
+• <strong>Volume:</strong> Persistent storage mounted into a container.<br><br>
+<strong>Container vs VM:</strong> VMs include a full OS (minutes to boot, GB overhead). Containers share the host kernel (seconds to start, MB overhead).`,
+    code: `FROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY . .\nCMD ["python", "main.py"]`,
+    tags: ['Dockerfile', 'image', 'container', 'registry', 'OCI'],
+    related: ['kubernetes', 'ci-cd', 'service-mesh']
+  },
+  {
+    id: 'kubernetes', cat: 'devops', name: 'Kubernetes', aka: 'K8s, Container Orchestration',
+    summary: 'An open-source system for automating deployment, scaling, and management of containerized applications.',
+    body: `Kubernetes (K8s) schedules containers across a cluster of nodes and keeps them running. Core abstractions:<br><br>
+<strong>Pod:</strong> Smallest deployable unit — one or more containers sharing network + storage.<br>
+<strong>Deployment:</strong> Declares desired state (e.g., "run 3 replicas of this image"). K8s reconciles actual vs. desired.<br>
+<strong>Service:</strong> Stable network endpoint (DNS name + IP) for a set of pods. Survives pod restarts.<br>
+<strong>Ingress:</strong> HTTP routing rules (L7) into the cluster.<br>
+<strong>ConfigMap / Secret:</strong> External configuration injected into pods.<br>
+<strong>Namespace:</strong> Virtual cluster for isolation.<br><br>
+The reconciliation loop (desired state → actual state) is the core mental model of K8s and Kubernetes-style infrastructure management.`,
+    analogy: 'Like an RTOS scheduler that monitors tasks, restarts crashed tasks, and migrates work between CPU cores — but for containers across a data center.',
+    tags: ['K8s', 'pod', 'deployment', 'ingress', 'kubectl', 'orchestration'],
+    related: ['docker', 'ci-cd', 'service-mesh']
+  },
+  {
+    id: 'ci-cd', cat: 'devops', name: 'CI/CD Pipelines', aka: 'Continuous Integration / Continuous Delivery',
+    summary: 'Automating the build, test, and deployment of software so that every code change flows reliably to production.',
+    body: `<strong>Continuous Integration (CI):</strong> Every commit triggers an automated build and test run. The goal: catch bugs immediately, never let the main branch break.<br><br>
+<strong>Continuous Delivery (CD):</strong> Every passing build is deployable to production — potentially with a manual gate.<br>
+<strong>Continuous Deployment:</strong> Every passing build automatically deploys to production with no human gate.<br><br>
+<strong>Typical pipeline stages:</strong><br>
+1. Checkout code<br>
+2. Install dependencies<br>
+3. Lint / static analysis<br>
+4. Unit tests<br>
+5. Integration tests<br>
+6. Build artifact (Docker image, binary)<br>
+7. Push to registry<br>
+8. Deploy to staging → production<br><br>
+<strong>Tools:</strong> GitHub Actions, GitLab CI, Jenkins, CircleCI, ArgoCD (GitOps).`,
+    tags: ['GitHub Actions', 'pipeline', 'GitOps', 'ArgoCD', 'Jenkins'],
+    related: ['docker', 'kubernetes', 'infrastructure-as-code']
+  },
+  {
+    id: 'infrastructure-as-code', cat: 'devops', name: 'Infrastructure as Code', aka: 'IaC / Terraform / Ansible',
+    summary: 'Managing and provisioning infrastructure through machine-readable configuration files rather than manual processes.',
+    body: `IaC treats infrastructure (servers, networks, databases, DNS) the same way you treat application code: version-controlled, reviewable, repeatable.<br><br>
+<strong>Declarative IaC (Terraform, Pulumi):</strong> You describe the desired end state. The tool figures out what to create/modify/destroy to get there. Idempotent — re-running is safe.<br><br>
+<strong>Imperative/Configuration Management (Ansible, Chef, Puppet):</strong> You write procedures that configure existing machines.<br><br>
+<strong>GitOps:</strong> The Git repository is the single source of truth. Changes to infrastructure are made via PRs; a controller (e.g., ArgoCD, Flux) syncs the cluster to match.`,
+    code: `# Terraform: declare an AWS EC2 instance\nresource "aws_instance" "web" {\n  ami           = "ami-0abcdef1234567890"\n  instance_type = "t3.micro"\n  tags = { Name = "web-server" }\n}`,
+    tags: ['Terraform', 'Ansible', 'GitOps', 'idempotent', 'Pulumi'],
+    related: ['ci-cd', 'kubernetes', 'docker']
+  },
+  {
+    id: 'observability', cat: 'devops', name: 'Observability', aka: 'Logs, Metrics, Traces (The Three Pillars)',
+    summary: 'The ability to understand the internal state of a system from its external outputs — without needing to redeploy or add new instrumentation.',
+    body: `<strong>Logs:</strong> Discrete timestamped events from a running process. Useful for debugging specific requests. Can be unstructured (text) or structured (JSON).<br><br>
+<strong>Metrics:</strong> Numerical measurements sampled over time. CPU %, request latency p99, error rate. Used for dashboards and alerting.<br><br>
+<strong>Traces:</strong> End-to-end tracking of a request as it flows through multiple services. A trace contains spans; each span is one service's handling of the request. Reveals exactly where latency is introduced.<br><br>
+<strong>Tools:</strong> Prometheus (metrics), Grafana (dashboards), Loki (logs), Jaeger/Zipkin (traces), OpenTelemetry (unified instrumentation standard).`,
+    tags: ['Prometheus', 'Grafana', 'OpenTelemetry', 'tracing', 'alerting'],
+    related: ['ci-cd', 'microservices', 'service-mesh']
+  },
+
+  // ── DATABASES ─────────────────────────────────────────────────────────────
+  {
+    id: 'acid', cat: 'db', name: 'ACID Transactions', aka: 'Atomicity, Consistency, Isolation, Durability',
+    summary: 'Four properties that guarantee database transactions are processed reliably, even in the face of failures.',
+    body: `<strong>Atomicity:</strong> A transaction is all-or-nothing. If any step fails, the entire transaction rolls back.<br><br>
+<strong>Consistency:</strong> A transaction brings the database from one valid state to another. Constraints are never violated mid-transaction.<br><br>
+<strong>Isolation:</strong> Concurrent transactions execute as if sequential. Different isolation levels (Read Committed, Repeatable Read, Serializable) trade performance for protection against anomalies (dirty reads, phantom reads).<br><br>
+<strong>Durability:</strong> Once committed, the transaction persists even if the system crashes. Implemented via write-ahead logging (WAL).`,
+    tags: ['transaction', 'rollback', 'isolation', 'WAL', 'relational'],
+    related: ['sql-vs-nosql', 'eventual-consistency', 'indexing']
+  },
+  {
+    id: 'sql-vs-nosql', cat: 'db', name: 'SQL vs NoSQL', aka: 'Relational vs Non-Relational',
+    summary: 'SQL databases store structured data in tables with schemas; NoSQL databases sacrifice some structure for flexibility and scale.',
+    body: `<strong>Relational (SQL):</strong> Data in tables, rows, columns. Schema enforced. JOINs across tables. ACID transactions. Best when data relationships are complex and consistency is critical. (PostgreSQL, MySQL, SQLite)<br><br>
+<strong>Document (MongoDB, Firestore):</strong> Data as JSON documents. Flexible schema. Good for hierarchical data that's read/written together. No joins — embed related data.<br><br>
+<strong>Key-Value (Redis, DynamoDB):</strong> Fastest lookup by key. Used for caching, sessions, leaderboards.<br><br>
+<strong>Wide-Column (Cassandra, HBase):</strong> Optimized for writes at massive scale. Rows can have different columns. Time-series, IoT data.<br><br>
+<strong>Graph (Neo4j):</strong> Nodes and edges. Optimal for highly connected data (social networks, fraud detection).`,
+    tags: ['PostgreSQL', 'MongoDB', 'Redis', 'Cassandra', 'schema'],
+    related: ['acid', 'indexing', 'cap-theorem']
+  },
+  {
+    id: 'indexing', cat: 'db', name: 'Indexes & Query Optimization', aka: 'B-Tree Index, Index Scan, Query Plan',
+    summary: 'Database indexes are auxiliary data structures that speed up queries at the cost of write overhead and storage.',
+    body: `Without an index, a query must do a full table scan (O(n)). An index allows the database to find matching rows in O(log n) or O(1).<br><br>
+<strong>B-Tree index:</strong> Default index type. Good for equality and range queries (&lt;, &gt;, BETWEEN, ORDER BY).<br><br>
+<strong>Hash index:</strong> O(1) equality lookup. Useless for range queries.<br><br>
+<strong>Composite index:</strong> Index on (col_a, col_b). Useful for queries filtering on both; also usable for queries on col_a alone (leading column rule).<br><br>
+<strong>EXPLAIN / Query Plan:</strong> The database's execution plan for a query. "Seq Scan" (slow) vs "Index Scan" (fast). Always EXPLAIN slow queries before optimizing.`,
+    code: `-- Add index on frequently queried column\nCREATE INDEX idx_users_email ON users(email);\n\n-- Analyze query plan\nEXPLAIN ANALYZE SELECT * FROM users WHERE email = 'x@y.com';`,
+    tags: ['B-Tree', 'query plan', 'EXPLAIN', 'composite index', 'performance'],
+    related: ['acid', 'sql-vs-nosql']
+  },
+  {
+    id: 'orm', cat: 'db', name: 'ORM & Query Builders', aka: 'Object-Relational Mapping',
+    summary: 'Libraries that map database rows to language objects, letting you query databases in your programming language instead of SQL.',
+    body: `An ORM (Object-Relational Mapper) abstracts the database. You define model classes that map to tables; the ORM generates SQL for CRUD operations.<br><br>
+<strong>Pros:</strong> Less boilerplate, automatic parameterization (prevents SQL injection), database portability, relationship loading.<br><br>
+<strong>Cons:</strong> N+1 query problem (loading 100 users + fetching their posts one-by-one = 101 queries). Generated SQL can be inefficient. Abstraction leaks for complex queries.<br><br>
+<strong>N+1 fix:</strong> Eager loading / JOINs. Always check generated SQL in development.<br><br>
+<strong>Examples:</strong> SQLAlchemy (Python), Hibernate (Java), ActiveRecord (Ruby), Prisma (TypeScript), GORM (Go).`,
+    tags: ['N+1', 'SQLAlchemy', 'Prisma', 'ActiveRecord', 'migration'],
+    related: ['acid', 'sql-vs-nosql', 'indexing']
+  },
+
+  // ── WEB / API ─────────────────────────────────────────────────────────────
+  {
+    id: 'rest', cat: 'web', name: 'REST APIs', aka: 'RESTful, HTTP API',
+    summary: 'An architectural style for distributed hypermedia systems using HTTP verbs and resources as the primary abstractions.',
+    body: `REST (Representational State Transfer) uses standard HTTP methods and URLs to expose resources:<br><br>
+<strong>HTTP Verbs:</strong><br>
+GET — read a resource (idempotent)<br>
+POST — create a resource<br>
+PUT — replace a resource (idempotent)<br>
+PATCH — partial update<br>
+DELETE — delete a resource<br><br>
+<strong>Status codes:</strong> 200 OK, 201 Created, 204 No Content, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 409 Conflict, 422 Unprocessable, 500 Internal Error.<br><br>
+<strong>REST constraints:</strong> Stateless (no server-side session), uniform interface, cacheable, layered system.<br><br>
+<strong>Idempotency:</strong> GET/PUT/DELETE called multiple times = same result. POST is not idempotent.`,
+    code: `GET    /users          → list users\nGET    /users/42       → get user 42\nPOST   /users          → create user\nPUT    /users/42       → replace user 42\nPATCH  /users/42       → update fields\nDELETE /users/42       → delete user 42`,
+    tags: ['HTTP', 'stateless', 'idempotent', 'status codes', 'CRUD'],
+    related: ['graphql', 'grpc', 'api-gateway', 'auth']
+  },
+  {
+    id: 'graphql', cat: 'web', name: 'GraphQL', aka: 'Query Language for APIs',
+    summary: 'A query language and runtime for APIs that lets clients request exactly the data they need — no more, no less.',
+    body: `REST returns fixed shapes; GraphQL lets the client define the shape of the response. A single endpoint (/graphql) handles all queries.<br><br>
+<strong>Query:</strong> Read data. The client specifies exactly which fields to return — no over-fetching.<br>
+<strong>Mutation:</strong> Write/modify data.<br>
+<strong>Subscription:</strong> Real-time event stream over WebSocket.<br><br>
+<strong>Pros:</strong> Eliminates over-fetching and under-fetching. Self-documenting schema. Strong types.<br><br>
+<strong>Cons:</strong> N+1 queries on the server side (solved by DataLoader / batching). Complex caching. Overhead for simple CRUD.`,
+    code: `# Client asks for exactly what it needs\nquery {\n  user(id: "42") {\n    name\n    email\n    posts { title }\n  }\n}`,
+    tags: ['schema', 'mutation', 'subscription', 'over-fetching', 'DataLoader'],
+    related: ['rest', 'grpc', 'api-gateway']
+  },
+  {
+    id: 'grpc', cat: 'web', name: 'gRPC & Protocol Buffers', aka: 'Remote Procedure Call',
+    summary: 'A high-performance RPC framework using binary Protocol Buffers for serialization — ideal for service-to-service communication.',
+    body: `gRPC lets you define service interfaces in a .proto file, generate client/server stubs in any language, and call remote methods as if they were local functions.<br><br>
+<strong>Protocol Buffers (protobuf):</strong> Binary serialization format. Significantly smaller and faster to serialize/deserialize than JSON. Strongly typed. Schema is the contract.<br><br>
+<strong>HTTP/2 transport:</strong> Multiplexed streams, header compression, bidirectional streaming. Much more efficient than HTTP/1.1.<br><br>
+<strong>Streaming types:</strong> Unary (one req, one resp), server streaming, client streaming, bidirectional streaming.<br><br>
+<strong>When to use:</strong> Internal microservice communication. High-throughput, low-latency requirements. Multi-language environments.`,
+    code: `// .proto definition\nservice UserService {\n  rpc GetUser (GetUserRequest) returns (User);\n  rpc ListUsers (ListUsersRequest) returns (stream User);\n}`,
+    tags: ['protobuf', 'HTTP/2', 'RPC', 'binary', 'streaming'],
+    related: ['rest', 'graphql', 'microservices']
+  },
+  {
+    id: 'api-gateway', cat: 'web', name: 'API Gateway', aka: 'Edge Proxy, BFF',
+    summary: 'A single entry point for all client requests — handling routing, auth, rate limiting, and protocol translation before traffic reaches backend services.',
+    body: `An API Gateway sits at the edge of your microservices cluster. Clients talk to the gateway; the gateway routes to the appropriate service.<br><br>
+<strong>Responsibilities:</strong><br>
+• Authentication/Authorization (validate JWT before routing)<br>
+• Rate limiting and throttling<br>
+• Request routing to services<br>
+• Protocol translation (e.g., REST in, gRPC out)<br>
+• SSL/TLS termination<br>
+• Caching<br>
+• Request/response transformation<br><br>
+<strong>BFF (Backend for Frontend):</strong> A variant where each client type (mobile, web) gets its own gateway optimized for its needs.<br><br>
+<strong>Tools:</strong> Kong, AWS API Gateway, Nginx, Envoy, Traefik.`,
+    tags: ['rate limiting', 'JWT', 'routing', 'BFF', 'Kong', 'SSL termination'],
+    related: ['rest', 'microservices', 'load-balancer', 'auth']
+  },
+  {
+    id: 'auth', cat: 'web', name: 'Authentication & Authorization', aka: 'AuthN / AuthZ, JWT, OAuth',
+    summary: 'Authentication proves who you are; authorization determines what you\'re allowed to do.',
+    body: `<strong>Authentication (AuthN):</strong> Proving identity. Strategies: password, OAuth (delegated auth), SAML, magic link, WebAuthn/passkeys.<br><br>
+<strong>Authorization (AuthZ):</strong> What the authenticated user can do. Models: RBAC (Role-Based Access Control), ABAC (Attribute-Based), ACL (Access Control List).<br><br>
+<strong>JWT (JSON Web Token):</strong> A signed, base64-encoded token containing claims (user ID, roles, expiry). Self-contained — the server validates the signature without a DB lookup. Stateless.<br>
+• Header.Payload.Signature<br>
+• HS256 (HMAC) or RS256 (RSA) signing<br><br>
+<strong>OAuth 2.0:</strong> Authorization framework for delegated access. "Login with Google" is OAuth. The user authorizes your app to access their data on another service.<br>
+<strong>OIDC (OpenID Connect):</strong> Identity layer on top of OAuth 2.0. Adds authentication.`,
+    code: `# JWT structure (decoded)\nHeader:  { "alg": "RS256", "typ": "JWT" }\nPayload: { "sub": "user_42", "roles": ["admin"], "exp": 1700000000 }\nSignature: RSASHA256(base64(header) + "." + base64(payload), privateKey)`,
+    tags: ['JWT', 'OAuth', 'OIDC', 'RBAC', 'session', 'bearer token'],
+    related: ['rest', 'api-gateway', 'security-concepts']
+  },
+  {
+    id: 'websockets', cat: 'web', name: 'WebSockets & SSE', aka: 'Real-Time Communication',
+    summary: 'Protocols for persistent, bidirectional (WebSocket) or server-to-client (SSE) connections enabling real-time data push.',
+    body: `<strong>HTTP</strong> is request-response: the client always initiates. For real-time (chat, live feeds, collaborative apps) you need a persistent connection.<br><br>
+<strong>WebSocket:</strong> Upgrades an HTTP connection to a persistent, full-duplex TCP connection. Either side can send messages at any time. Best for bidirectional real-time (chat, games, collaborative editing).<br><br>
+<strong>Server-Sent Events (SSE):</strong> Unidirectional — server pushes events to the client over a long-lived HTTP connection. Simpler, works through proxies, auto-reconnects. Best for notifications, live feeds, streaming AI responses.<br><br>
+<strong>Long Polling:</strong> Client makes HTTP request; server holds it open until there's data. Fallback when WebSockets aren't available.`,
+    tags: ['real-time', 'full-duplex', 'SSE', 'long polling', 'streaming'],
+    related: ['rest', 'graphql']
+  },
+
+  // ── SECURITY ──────────────────────────────────────────────────────────────
+  {
+    id: 'security-concepts', cat: 'sec', name: 'Core Security Concepts', aka: 'CIA Triad, Defense in Depth',
+    summary: 'The foundational framework for thinking about security: Confidentiality, Integrity, and Availability.',
+    body: `<strong>CIA Triad:</strong><br>
+• <strong>Confidentiality:</strong> Data accessible only to authorized parties (encryption, access control)<br>
+• <strong>Integrity:</strong> Data hasn't been tampered with (hashing, digital signatures)<br>
+• <strong>Availability:</strong> System is operational for authorized users (redundancy, DDoS protection)<br><br>
+<strong>Defense in Depth:</strong> Multiple layers of security. Perimeter firewall + network segmentation + host hardening + application security + data encryption. No single point of failure.<br><br>
+<strong>Principle of Least Privilege:</strong> Grant only the permissions necessary. An API service shouldn't have admin DB access.<br><br>
+<strong>Zero Trust:</strong> Never trust, always verify. Authenticate and authorize every request regardless of network location.`,
+    tags: ['CIA triad', 'least privilege', 'zero trust', 'defense in depth'],
+    related: ['auth', 'encryption', 'owasp']
+  },
+  {
+    id: 'encryption', cat: 'sec', name: 'Encryption & PKI', aka: 'TLS, AES, RSA, Certificates',
+    summary: 'Transforming data to protect it from unauthorized access — using symmetric or asymmetric cryptographic algorithms.',
+    body: `<strong>Symmetric encryption:</strong> Same key encrypts and decrypts. Fast. Problem: secure key exchange. Examples: AES-256-GCM.<br><br>
+<strong>Asymmetric encryption:</strong> Public key encrypts; private key decrypts. Solves key exchange. Slow — only used for small payloads or to exchange a symmetric key. Examples: RSA, ECDSA, Ed25519.<br><br>
+<strong>TLS (Transport Layer Security):</strong> Secures network connections. Uses asymmetric crypto to establish a shared symmetric session key (handshake), then encrypts all data with it.<br><br>
+<strong>PKI (Public Key Infrastructure):</strong> System of Certificate Authorities (CAs) that sign certificates, allowing clients to trust public keys without prior relationship.<br><br>
+<strong>Hashing:</strong> One-way function producing a fixed-length digest. SHA-256, SHA-3. Used for integrity verification and password storage (bcrypt, Argon2 — with salt).`,
+    tags: ['AES', 'RSA', 'TLS', 'PKI', 'certificate', 'hashing', 'bcrypt'],
+    related: ['security-concepts', 'auth', 'owasp']
+  },
+  {
+    id: 'owasp', cat: 'sec', name: 'OWASP Top 10 Vulnerabilities', aka: 'Common Web Security Flaws',
+    summary: 'The ten most critical web application security risks — the standard checklist for web security.',
+    body: `<strong>1. Injection (SQL, Command):</strong> Untrusted data sent to an interpreter. Parameterized queries prevent SQL injection.<br><br>
+<strong>2. Broken Authentication:</strong> Weak passwords, no MFA, session fixation, insecure token storage.<br><br>
+<strong>3. XSS (Cross-Site Scripting):</strong> Injecting scripts into pages viewed by other users. Sanitize/encode output.<br><br>
+<strong>4. IDOR (Insecure Direct Object Reference):</strong> Accessing resources by guessing IDs without authorization checks.<br><br>
+<strong>5. Security Misconfiguration:</strong> Default credentials, open S3 buckets, verbose error messages.<br><br>
+<strong>6. Vulnerable Dependencies:</strong> Outdated libraries with known CVEs. Use dependency scanning (Snyk, Dependabot).<br><br>
+<strong>7. CSRF (Cross-Site Request Forgery):</strong> Tricking a logged-in user's browser into making unintended requests. Mitigated by CSRF tokens, SameSite cookies.<br><br>
+<strong>8. Insecure Deserialization:</strong> Deserializing untrusted data can lead to RCE.<br><br>
+<strong>9. Logging & Monitoring Failures:</strong> Not detecting breaches.<br>
+<strong>10. SSRF (Server-Side Request Forgery):</strong> Attacker makes the server fetch internal resources.`,
+    tags: ['SQL injection', 'XSS', 'CSRF', 'IDOR', 'CVE', 'SSRF'],
+    related: ['security-concepts', 'encryption', 'auth']
+  },
+
+  // ── LANGUAGE PARADIGMS ────────────────────────────────────────────────────
+  {
+    id: 'oop', cat: 'lang', name: 'Object-Oriented Programming', aka: 'OOP',
+    summary: 'Organizing code around objects — encapsulated bundles of state and behavior — with inheritance and polymorphism.',
+    body: `<strong>Encapsulation:</strong> Bundling data and methods that operate on it. Hiding internal state, exposing behavior through a public interface.<br><br>
+<strong>Inheritance:</strong> A class extends another, inheriting its properties and methods. Subclass can override behavior.<br><br>
+<strong>Polymorphism:</strong> Different classes can respond to the same method call in their own way. A shape.draw() call works for Circle, Square, Triangle.<br><br>
+<strong>Abstraction:</strong> Hiding implementation details behind interfaces and abstract classes.<br><br>
+<strong>Composition over Inheritance:</strong> A widely accepted principle — favor "has-a" over "is-a". Inheritance hierarchies become brittle. Compose objects from small, focused mixins/interfaces instead.`,
+    tags: ['encapsulation', 'polymorphism', 'inheritance', 'abstraction', 'interface'],
+    related: ['solid', 'functional', 'design-patterns']
+  },
+  {
+    id: 'functional', cat: 'lang', name: 'Functional Programming', aka: 'FP, Pure Functions, Immutability',
+    summary: 'A paradigm that treats computation as the evaluation of pure functions, avoiding shared state and mutation.',
+    body: `<strong>Pure function:</strong> Same inputs always produce same output. No side effects. Trivially testable and parallelizable.<br><br>
+<strong>Immutability:</strong> Data structures are never mutated; transformations produce new values. Eliminates entire classes of bugs (shared mutable state, race conditions).<br><br>
+<strong>First-class functions:</strong> Functions can be passed as arguments, returned from functions, stored in variables.<br><br>
+<strong>Higher-order functions:</strong> map, filter, reduce — transform collections by applying a function to each element.<br><br>
+<strong>Closures:</strong> A function that captures variables from its enclosing scope.<br><br>
+Functional concepts are now pervasive in OOP languages: Java streams, Python list comprehensions, Rust iterators, JavaScript array methods.`,
+    code: `# Pure, immutable pipeline\nnumbers = [1, 2, 3, 4, 5]\nresult = list(\n    filter(lambda x: x % 2 == 0,\n    map(lambda x: x * 2, numbers))\n)\n# [4, 8]`,
+    tags: ['pure function', 'immutability', 'map/filter/reduce', 'closure', 'monad'],
+    related: ['oop', 'type-systems', 'concurrency']
+  },
+  {
+    id: 'concurrency', cat: 'lang', name: 'Concurrency & Parallelism', aka: 'Threads, Async, Coroutines',
+    summary: 'Concurrency is dealing with many things at once (structure); parallelism is doing many things at once (execution).',
+    body: `<strong>Concurrency:</strong> A program is structured to handle multiple tasks that can make progress independently. They may interleave on a single core.<br><br>
+<strong>Parallelism:</strong> Multiple tasks literally execute simultaneously on multiple CPU cores.<br><br>
+<strong>Threads:</strong> OS-managed units of execution sharing process memory. Risk: data races, deadlocks. Require synchronization (mutex, semaphore, condition variable).<br><br>
+<strong>Async/Await:</strong> Cooperative concurrency on a single thread. I/O-bound work yields control while waiting (e.g., Python asyncio, JavaScript event loop, Rust tokio). Scales to many concurrent connections with minimal memory overhead.<br><br>
+<strong>Actor Model:</strong> Concurrent actors communicate only via messages. No shared memory. Eliminates data races. (Erlang, Akka, Rust's Actix).`,
+    analogy: 'You know this: RTOS tasks + mutexes for threading; interrupt-driven I/O for async. Same concepts, different vocabulary.',
+    tags: ['threads', 'mutex', 'async/await', 'event loop', 'race condition', 'deadlock', 'actor'],
+    related: ['functional', 'oop', 'distributed']
+  },
+  {
+    id: 'type-systems', cat: 'lang', name: 'Type Systems', aka: 'Static vs Dynamic, Strong vs Weak',
+    summary: 'A type system classifies values by kind and enforces rules about how they can be used — catching bugs at compile time or runtime.',
+    body: `<strong>Static typing:</strong> Types checked at compile time (Java, C, Rust, Go, TypeScript). Catches type errors before running. Better tooling/autocomplete.<br><br>
+<strong>Dynamic typing:</strong> Types checked at runtime (Python, JavaScript, Ruby). More flexible, less ceremony, but type errors surface later.<br><br>
+<strong>Strong typing:</strong> No implicit coercions between incompatible types. Python is dynamic but strongly typed — 1 + "2" is an error.<br><br>
+<strong>Weak typing:</strong> Implicit coercions. JavaScript: 1 + "2" = "12".<br><br>
+<strong>Type inference:</strong> Compiler deduces types without explicit annotation (Rust, Haskell, Go).<br><br>
+<strong>Generics/Templates:</strong> Type-parameterized code. Write once, use for any type. <code>Vec&lt;T&gt;</code> in Rust, <code>List&lt;T&gt;</code> in Java.`,
+    tags: ['static', 'dynamic', 'inference', 'generics', 'TypeScript', 'Rust', 'duck typing'],
+    related: ['oop', 'functional']
+  },
+  {
+    id: 'memory-management', cat: 'lang', name: 'Memory Management', aka: 'GC, Ownership, RAII',
+    summary: 'How a language handles allocation and deallocation of heap memory — a fundamental axis of language design.',
+    body: `<strong>Manual (C, C++):</strong> malloc/free. Maximum control, maximum responsibility. Memory leaks and use-after-free are on you.<br><br>
+<strong>Garbage Collection (Java, Python, Go, C#):</strong> Runtime tracks live objects and reclaims unreachable memory. Eliminates leaks and use-after-free. Tradeoff: GC pauses, runtime overhead, nondeterministic deallocation.<br><br>
+<strong>Ownership (Rust):</strong> Compile-time ownership rules guarantee memory safety with zero runtime cost. Each value has one owner. When the owner goes out of scope, memory is freed. The borrow checker enforces this.<br><br>
+<strong>RAII (C++, Rust):</strong> Resource Acquisition Is Initialization. Resources acquired in constructor, released in destructor. Deterministic cleanup via scope.`,
+    analogy: 'You\'re comfortable with stack vs heap and volatile in C. Ownership is the Rust compiler enforcing what you\'d do manually in C — no dangling pointers by construction.',
+    tags: ['GC', 'ownership', 'borrow checker', 'RAII', 'heap', 'stack', 'Rust'],
+    related: ['type-systems', 'concurrency']
+  },
+
+  // ── NEW: ASYNC & CONCURRENCY DEEP DIVES ───────────────────────────────────
+  {
+    id: 'async-await', cat: 'lang', name: 'Async / Await & Event Loops', aka: 'Promises, Futures, Coroutines',
+    summary: 'A language-level model for writing non-blocking I/O code that reads like synchronous code — without threads.',
+    body: `<strong>The problem:</strong> I/O operations (network, disk) are slow. Blocking a thread while waiting wastes resources. But callbacks ("callback hell") make async code unreadable.<br><br>
+<strong>Promises/Futures:</strong> A value that doesn't exist yet but will. A Promise (JS) or Future (Rust/Java) represents a pending async result you can chain or await.<br><br>
+<strong>Async/Await:</strong> Syntax sugar over Futures. <code>await</code> suspends the current coroutine at that point and returns control to the runtime — without blocking the thread. The runtime resumes it when the result is ready.<br><br>
+<strong>Event Loop:</strong> A single-threaded loop that picks up completed I/O events and resumes the coroutines waiting on them. One thread can handle thousands of concurrent connections this way (JavaScript's model, Python asyncio, Rust tokio).<br><br>
+<strong>CPU-bound vs I/O-bound:</strong> Async wins for I/O-bound work (waiting on network/disk). For CPU-bound work, you need real threads or a thread pool — async doesn't help if you're burning CPU cycles.<br><br>
+<strong>Colored functions problem:</strong> Async is "contagious" — an async function can only be awaited from another async function. Mixing sync and async code requires care (run_in_executor in Python, spawn_blocking in Tokio).`,
+    analogy: 'Exactly like interrupt-driven I/O in firmware. Instead of busy-polling a UART, you fire the transfer and yield. The interrupt (event loop) wakes you when data arrives. Async/await is that pattern with nice syntax.',
+    code: `# Python asyncio — one thread, many concurrent requests\nasync def fetch(url):\n    async with aiohttp.ClientSession() as s:\n        async with s.get(url) as resp:\n            return await resp.text()  # yields here; doesn't block\n\nasync def main():\n    # Run 100 fetches concurrently on ONE thread\n    results = await asyncio.gather(*[fetch(url) for url in urls])`,
+    tags: ['async', 'await', 'Promise', 'Future', 'event loop', 'coroutine', 'tokio', 'asyncio', 'non-blocking'],
+    related: ['concurrency', 'grpc', 'websockets', 'event-driven']
+  },
+  {
+    id: 'promises-callbacks', cat: 'lang', name: 'Callbacks, Promises & Futures', aka: 'Callback Hell, Then-chaining',
+    summary: 'The evolution of async composition patterns — from raw callbacks to chainable Promises to awaitable Futures.',
+    body: `<strong>Callbacks (1st gen):</strong> Pass a function to be called when the async work finishes. Simple but nests deeply ("pyramid of doom"). Error handling is inconsistent.<br><br>
+<strong>Promises (2nd gen, JS):</strong> An object representing an eventual value. Chain .then() for success, .catch() for errors. Flat composition instead of nesting. Can be combined: Promise.all() waits for all; Promise.race() returns the first.<br><br>
+<strong>Async/Await (3rd gen):</strong> Makes promise chains read as straight-line code. Under the hood it's still Promises — just desugared by the compiler.<br><br>
+<strong>Futures (Rust):</strong> Zero-cost abstractions. A Future is lazy — it does nothing until polled by an executor (Tokio, async-std). The borrow checker applies to async code too, preventing data races at compile time.`,
+    code: `// Callback hell\ngetUser(id, (err, user) => {\n  getPosts(user.id, (err, posts) => {\n    getComments(posts[0].id, (err, comments) => { ... })\n  })\n})\n\n// Promise chain\ngetUser(id)\n  .then(user => getPosts(user.id))\n  .then(posts => getComments(posts[0].id))\n  .catch(err => console.error(err))\n\n// Async/await\ntry {\n  const user  = await getUser(id)\n  const posts = await getPosts(user.id)\n  const comments = await getComments(posts[0].id)\n} catch(err) { ... }`,
+    tags: ['callback', 'Promise', 'then', 'catch', 'async/await', 'Future', 'Rust', 'JavaScript'],
+    related: ['async-await', 'concurrency', 'functional']
+  },
+
+  // ── NEW: ARCHITECTURE ADDITIONS ───────────────────────────────────────────
+  {
+    id: 'strangler-fig', cat: 'arch', name: 'Migration Patterns', aka: 'Strangler Fig, Big Bang Rewrite, Branch by Abstraction',
+    summary: 'Strategies for incrementally replacing or modernizing an existing system without a risky full rewrite.',
+    body: `<strong>Strangler Fig:</strong> Incrementally replace a legacy system by routing new functionality to a new system alongside the old one. Over time the new system "strangles" the old. The old system never needs a big-bang cutover — you migrate piece by piece.<br><br>
+<strong>Branch by Abstraction:</strong> Introduce an abstraction layer over the component you want to replace. New implementation lives behind the same interface. Flip the switch when ready. Allows parallel development on the same codebase without a long-lived branch.<br><br>
+<strong>Anti-pattern — Big Bang Rewrite:</strong> Throw away the old system and build from scratch. Almost always fails or takes 3x longer than expected. The old system contained years of implicit business logic that isn't written down anywhere.<br><br>
+<strong>Feature Flags:</strong> Deploy new code to production but only activate it for a percentage of users. Roll out gradually, roll back instantly. Decouples deploy from release.`,
+    analogy: 'Like doing a live hardware board spin — you run the old board in parallel, validate the new one under real conditions, then cut over. Not a hard swap on day one.',
+    tags: ['strangler fig', 'feature flags', 'refactoring', 'legacy', 'migration', 'branch by abstraction'],
+    related: ['microservices', 'ci-cd', 'design-patterns']
+  },
+  {
+    id: 'caching', cat: 'arch', name: 'Caching Strategies', aka: 'CDN, Redis, Cache Invalidation',
+    summary: 'Storing copies of expensive-to-compute or slow-to-fetch data in faster storage, closer to the consumer.',
+    body: `<strong>Cache-aside (Lazy loading):</strong> App checks cache first; on miss, fetches from DB, writes to cache, returns result. Most common pattern.<br><br>
+<strong>Write-through:</strong> On every write, update both DB and cache simultaneously. Cache is always warm but write latency increases.<br><br>
+<strong>Write-behind (Write-back):</strong> Write to cache immediately, persist to DB asynchronously. Very fast writes; risk of data loss on crash.<br><br>
+<strong>TTL (Time-to-Live):</strong> Cache entries expire after a duration. Simple but imprecise — stale data for up to TTL seconds.<br><br>
+<strong>Cache invalidation:</strong> Phil Karlton's famous quip: "There are only two hard things in computer science: cache invalidation and naming things." Invalidating the right cache entries on write is the core challenge.<br><br>
+<strong>CDN (Content Delivery Network):</strong> A globally distributed cache for static assets (images, JS, CSS) and sometimes API responses. Cloudflare, AWS CloudFront, Fastly. Serves content from an edge node geographically near the user.`,
+    analogy: 'Identical to your L1/L2/L3 CPU cache hierarchy — fast/small/close vs slow/large/far. Same tradeoffs: coherency, eviction policy, write strategy.',
+    tags: ['Redis', 'CDN', 'TTL', 'eviction', 'LRU', 'cache-aside', 'invalidation', 'Cloudflare'],
+    related: ['sql-vs-nosql', 'microservices', 'distributed']
+  },
+  {
+    id: 'rate-limiting', cat: 'arch', name: 'Rate Limiting & Backpressure', aka: 'Token Bucket, Leaky Bucket, Circuit Breaker',
+    summary: 'Controlling the rate of requests through a system to prevent overload — and propagating that pressure upstream.',
+    body: `<strong>Rate Limiting:</strong> Enforcing a maximum request rate per client, API key, or IP. Protects services from abuse and overload.<br>
+• <em>Token Bucket:</em> A bucket fills with tokens at a fixed rate. Each request consumes a token. Allows bursts up to bucket capacity.<br>
+• <em>Fixed Window:</em> Count requests per time window (e.g., 100 req/min). Simple; vulnerable to boundary bursts.<br>
+• <em>Sliding Window:</em> Rolling window prevents boundary abuse. More accurate but more expensive to compute.<br><br>
+<strong>Circuit Breaker:</strong> When a downstream service is failing, stop sending requests to it rather than letting failures cascade. Three states: Closed (normal), Open (rejecting all requests after failure threshold), Half-Open (test with small traffic). Implemented in Resilience4j, Polly, Hystrix.<br><br>
+<strong>Backpressure:</strong> When a consumer can't keep up with a producer, signal the producer to slow down rather than letting a queue grow unboundedly. Reactive Streams (RxJava, Akka Streams) formalize this.`,
+    analogy: 'Circuit breaker = thermal fuse on a PCB. Token bucket = charge pump with a reservoir. Backpressure = flow control handshaking (RTS/CTS on UART).',
+    tags: ['token bucket', 'circuit breaker', 'backpressure', 'throttling', 'Resilience4j'],
+    related: ['microservices', 'api-gateway', 'load-balancer', 'event-driven']
+  },
+
+  // ── NEW: DISTRIBUTED ADDITIONS ────────────────────────────────────────────
+  {
+    id: 'message-queues', cat: 'dist', name: 'Message Queues & Brokers', aka: 'Kafka, RabbitMQ, SQS, NATS',
+    summary: 'Durable intermediaries that decouple producers and consumers, enabling async communication and load leveling.',
+    body: `A message broker accepts messages from producers and holds them until consumers are ready. Producers and consumers are fully decoupled — neither knows about the other.<br><br>
+<strong>Kafka:</strong> Distributed commit log. Messages are durably persisted and can be replayed. Multiple consumer groups can independently read the same topic at their own offset. Best for high-throughput event streaming, audit logs, event sourcing. Retains messages for days/weeks.<br><br>
+<strong>RabbitMQ:</strong> Traditional message broker. Rich routing (exchanges, bindings). Messages acknowledged and deleted on consumption. Best for task queues, RPC patterns.<br><br>
+<strong>AWS SQS:</strong> Managed queue. At-least-once delivery. Dead-letter queues for failed messages. Simple and operationally cheap.<br><br>
+<strong>NATS:</strong> Ultra-low-latency messaging. Pub/sub and request/reply. Used in edge/IoT and microservice meshes.<br><br>
+<strong>At-least-once vs exactly-once:</strong> Most queues guarantee at-least-once delivery — your consumers must be idempotent (processing the same message twice has the same result as once).`,
+    analogy: 'Like a hardware mailbox register or FIFO buffer between producer and consumer — decouples timing, absorbs bursts, prevents back-pressure from blocking the sender.',
+    tags: ['Kafka', 'RabbitMQ', 'SQS', 'NATS', 'at-least-once', 'idempotent', 'dead-letter queue', 'offset'],
+    related: ['event-driven', 'microservices', 'cqrs', 'async-await']
+  },
+  {
+    id: 'service-discovery', cat: 'dist', name: 'Service Discovery & Health Checks', aka: 'Consul, Eureka, DNS-SD',
+    summary: 'How services in a dynamic environment find each other when IP addresses and ports are not static.',
+    body: `In a static system you hardcode IPs. In a dynamic containerized system, instances come and go — their IPs change on every restart. Service discovery solves this.<br><br>
+<strong>Client-side discovery:</strong> The client queries a registry (e.g., Consul) to get a list of healthy instances and picks one (with load balancing logic in the client). Netflix Eureka uses this model.<br><br>
+<strong>Server-side discovery:</strong> The client talks to a load balancer or API gateway that handles the registry lookup. Simpler client.<br><br>
+<strong>DNS-based:</strong> Services register with a DNS server. Kubernetes Services use this — <code>my-service.my-namespace.svc.cluster.local</code> resolves to healthy pods.<br><br>
+<strong>Health checks:</strong> The registry periodically probes each instance (HTTP /health, TCP connect, or gRPC health check). Unhealthy instances are deregistered and removed from routing.`,
+    tags: ['Consul', 'Eureka', 'DNS', 'health check', 'sidecar', 'Kubernetes Service'],
+    related: ['microservices', 'load-balancer', 'service-mesh', 'kubernetes']
+  },
+
+  // ── NEW: DEVOPS ADDITIONS ─────────────────────────────────────────────────
+  {
+    id: 'git-workflow', cat: 'devops', name: 'Git Workflows & Branching Strategies', aka: 'GitFlow, Trunk-Based Development, PRs',
+    summary: 'How teams structure Git branches and code review to coordinate parallel development and safe releases.',
+    body: `<strong>Trunk-Based Development (TBD):</strong> Everyone commits small changes directly to main/trunk frequently (at least daily). Feature flags hide unfinished work. Requires strong CI. Fastest flow, fewest merge conflicts. Preferred at high-performing teams (Google, Meta).<br><br>
+<strong>GitFlow:</strong> Long-lived feature branches merge into develop; develop merges to main via release branches. More ceremony, larger merges, but explicit release staging. Common in release-cadence products.<br><br>
+<strong>GitHub Flow:</strong> Simpler than GitFlow. Feature branches off main, PR for review, merge to main, deploy. Works well for continuous deployment.<br><br>
+<strong>Pull Request (PR) / Merge Request (MR):</strong> A proposal to merge a branch. Triggers CI checks, code review, and discussion before integration. The standard unit of code review.<br><br>
+<strong>Rebase vs Merge:</strong> Merge preserves history as-is with a merge commit. Rebase replays commits on top of the target branch — cleaner linear history but rewrites commit SHAs (risky on shared branches).`,
+    code: `# Typical trunk-based flow\ngit checkout -b feat/add-parser    # short-lived branch\n# ... make small commits ...\ngit push origin feat/add-parser\n# Open PR → CI passes → code review → merge → delete branch\n# Feature flag gates the unfinished feature in prod`,
+    tags: ['GitFlow', 'trunk-based', 'PR', 'merge request', 'rebase', 'feature flag', 'code review'],
+    related: ['ci-cd', 'infrastructure-as-code', 'strangler-fig']
+  },
+  {
+    id: 'testing-pyramid', cat: 'devops', name: 'Testing Strategies', aka: 'Test Pyramid, Unit/Integration/E2E',
+    summary: 'A layered model for test coverage: many fast unit tests, fewer integration tests, few slow end-to-end tests.',
+    body: `<strong>Unit Tests:</strong> Test a single function or class in isolation, with dependencies mocked. Fast (milliseconds). Should be the majority of your test suite. Catch logic bugs early.<br><br>
+<strong>Integration Tests:</strong> Test multiple components working together — often with a real database or external service. Slower but catch interface mismatches.<br><br>
+<strong>End-to-End (E2E) Tests:</strong> Drive the full system (e.g., browser automation with Playwright/Cypress). Slowest, most brittle, but highest confidence. Use sparingly for critical user flows.<br><br>
+<strong>Test Pyramid:</strong> Many unit → fewer integration → few E2E. Inverted pyramid (too many E2E) is an anti-pattern — slow, flaky CI.<br><br>
+<strong>TDD (Test-Driven Development):</strong> Write the test before the implementation. Red → Green → Refactor cycle. Forces good interface design and ensures coverage.<br><br>
+<strong>Mocking:</strong> Replace real dependencies with controlled fakes (mocks, stubs, spies) to isolate the unit under test and avoid slow/flaky external calls.`,
+    tags: ['unit test', 'integration test', 'E2E', 'TDD', 'mock', 'stub', 'Playwright', 'pytest', 'Jest'],
+    related: ['ci-cd', 'dependency-injection', 'solid']
+  },
+
+  // ── NEW: SECURITY ADDITIONS ───────────────────────────────────────────────
+  {
+    id: 'secrets-management', cat: 'sec', name: 'Secrets Management', aka: 'Vault, AWS Secrets Manager, Environment Variables',
+    summary: 'Safely storing and distributing credentials, API keys, and certificates — never hardcoded in source code.',
+    body: `Hardcoded secrets in source code are one of the most common and damaging security mistakes. Once a repo is committed, secrets are in git history forever.<br><br>
+<strong>Environment Variables:</strong> Secrets injected at runtime via the environment. Better than hardcoding, but secrets can leak via logs or process inspection.<br><br>
+<strong>HashiCorp Vault:</strong> Purpose-built secrets store. Dynamic secrets (generates short-lived DB credentials per request), secret leasing, audit logs, fine-grained access policies. Gold standard for secrets management.<br><br>
+<strong>AWS Secrets Manager / Parameter Store:</strong> Managed equivalents in AWS. Auto-rotate secrets (e.g., RDS passwords). Integrated with IAM.<br><br>
+<strong>Kubernetes Secrets:</strong> Base64-encoded (not encrypted!) by default — just obscured. Should be encrypted at rest with KMS and access-controlled via RBAC.<br><br>
+<strong>Secret scanning:</strong> Tools like GitGuardian, truffleHog, GitHub's secret scanning detect accidentally committed secrets.`,
+    tags: ['Vault', 'AWS Secrets Manager', 'env vars', 'rotation', 'secret scanning', 'GitGuardian'],
+    related: ['security-concepts', 'encryption', 'infrastructure-as-code', 'auth']
+  },
+  {
+    id: 'supply-chain-security', cat: 'sec', name: 'Supply Chain Security', aka: 'SBOM, CVE, Dependency Scanning',
+    summary: 'Securing the software you depend on — third-party libraries, build tools, and container base images can all be attack vectors.',
+    body: `Modern software is mostly dependencies. The average Node.js app has hundreds of transitive dependencies — each a potential vulnerability vector.<br><br>
+<strong>CVE (Common Vulnerabilities and Exposures):</strong> A public database of known vulnerabilities in software. Each has a severity score (CVSS). Staying current on CVEs for your dependencies is ongoing hygiene.<br><br>
+<strong>Dependency Scanning:</strong> Automated tools (Snyk, Dependabot, OWASP Dependency-Check) scan your dependencies against CVE databases and open PRs for updates.<br><br>
+<strong>SBOM (Software Bill of Materials):</strong> A machine-readable inventory of all components in a software artifact — libraries, versions, licenses. Required in some regulated industries. Generated by tools like Syft, CycloneDX.<br><br>
+<strong>SolarWinds / Log4Shell:</strong> High-profile supply chain attacks. SolarWinds: malicious code injected into a build pipeline. Log4Shell: a zero-day in an ubiquitous Java logging library. Illustrate why supply chain matters.<br><br>
+<strong>Signed artifacts:</strong> Signing container images and binaries (Sigstore, cosign) so consumers can verify they haven't been tampered with.`,
+    tags: ['CVE', 'SBOM', 'Snyk', 'Dependabot', 'Log4Shell', 'Sigstore', 'supply chain'],
+    related: ['owasp', 'security-concepts', 'docker', 'ci-cd']
+  },
+
+  // ── NEW: WEB/API ADDITIONS ─────────────────────────────────────────────────
+  {
+    id: 'http-internals', cat: 'web', name: 'HTTP Internals', aka: 'HTTP/1.1, HTTP/2, HTTP/3, QUIC',
+    summary: 'How the web\'s foundational protocol evolved — from a simple text protocol to a multiplexed binary protocol over UDP.',
+    body: `<strong>HTTP/1.1:</strong> Text-based. One request per TCP connection (or pipelining, which is broken in practice). Keep-alive reuses connections but head-of-line blocking limits throughput. Still the majority of the web.<br><br>
+<strong>HTTP/2:</strong> Binary framing. Multiplexing — multiple requests over one TCP connection simultaneously. Header compression (HPACK). Server push. Eliminates HTTP/1.1's head-of-line blocking at the HTTP layer (but TCP still has it).<br><br>
+<strong>HTTP/3 / QUIC:</strong> Runs over UDP instead of TCP. QUIC builds its own reliable delivery with streams — each stream is independent, so a lost packet only blocks that stream, not all streams (truly solves head-of-line blocking). Built-in TLS 1.3. Faster connection establishment (0-RTT). Used by all major services (Google, Cloudflare).<br><br>
+<strong>TLS Handshake:</strong> 1-RTT for TLS 1.3 (down from 2-RTT in TLS 1.2). The handshake negotiates cipher suites, exchanges certificates, and establishes session keys before any HTTP data flows.<br><br>
+<strong>DNS resolution flow:</strong> Browser → OS cache → recursive resolver → root NS → TLD NS → authoritative NS → IP.`,
+    tags: ['HTTP/2', 'HTTP/3', 'QUIC', 'multiplexing', 'TLS', 'head-of-line blocking', 'HPACK'],
+    related: ['rest', 'grpc', 'websockets', 'encryption']
+  },
+  {
+    id: 'cors-cookies', cat: 'web', name: 'CORS & Cookies', aka: 'Same-Origin Policy, SameSite, CSRF',
+    summary: 'Browser security mechanisms that control which origins can access which resources — and how credentials are handled.',
+    body: `<strong>Same-Origin Policy:</strong> Browsers restrict scripts from making requests to a different origin (scheme + host + port). Prevents malicious pages from reading your bank's API using your cookies.<br><br>
+<strong>CORS (Cross-Origin Resource Sharing):</strong> A server opt-in mechanism to allow specific cross-origin requests. The server responds with headers like <code>Access-Control-Allow-Origin: https://app.example.com</code>. Preflight OPTIONS requests verify permission before complex requests.<br><br>
+<strong>Cookies:</strong> Small key-value pairs set by the server, stored by the browser, and sent automatically with every request to that domain. Used for sessions and auth.<br><br>
+<strong>Cookie flags:</strong><br>
+• <code>HttpOnly</code>: JavaScript can't access the cookie. Prevents XSS stealing session tokens.<br>
+• <code>Secure</code>: Only sent over HTTPS.<br>
+• <code>SameSite=Strict/Lax</code>: Controls whether cookies are sent on cross-site requests. Primary CSRF defense.<br><br>
+<strong>JWT vs Session cookies:</strong> Session cookie stores an opaque ID; server looks up session state. JWT is self-contained — server is stateless. JWTs can't be easily invalidated before expiry.`,
+    tags: ['CORS', 'SameSite', 'HttpOnly', 'cookie', 'same-origin', 'preflight', 'CSRF', 'JWT'],
+    related: ['auth', 'owasp', 'http-internals', 'security-concepts']
+  },
+
+  // ── NEW: DATABASE ADDITIONS ────────────────────────────────────────────────
+  {
+    id: 'database-migrations', cat: 'db', name: 'Schema Migrations', aka: 'Database Migrations, Flyway, Alembic',
+    summary: 'Version-controlling database schema changes so they can be applied, tracked, and rolled back like code.',
+    body: `Application code and database schema must stay in sync. Schema migrations are versioned scripts that evolve the schema incrementally.<br><br>
+<strong>Migration tools:</strong> Flyway (Java), Alembic (Python/SQLAlchemy), Liquibase, Rails ActiveRecord Migrations, Prisma Migrate. Each tracks which migrations have been applied in a metadata table.<br><br>
+<strong>Up / Down migrations:</strong> Each migration has an "up" (apply) and optionally a "down" (rollback) script.<br><br>
+<strong>Zero-downtime migrations:</strong> The hard part. Adding a nullable column is safe. Renaming or deleting a column requires a multi-step process:<br>
+1. Add the new column (backward compatible)<br>
+2. Deploy code that writes to both old and new<br>
+3. Backfill old data<br>
+4. Deploy code reading from new column only<br>
+5. Drop the old column<br><br>
+<strong>Expand/Contract pattern:</strong> Formalization of the above. Never a breaking schema change in a single deploy.`,
+    code: `-- Flyway migration: V3__add_email_index.sql\nCREATE INDEX CONCURRENTLY idx_users_email\n  ON users(email);\n-- CONCURRENTLY = built without locking the table`,
+    tags: ['Flyway', 'Alembic', 'migration', 'schema', 'rollback', 'expand-contract', 'zero-downtime'],
+    related: ['acid', 'orm', 'ci-cd', 'sql-vs-nosql']
+  },
+  {
+    id: 'search', cat: 'db', name: 'Search & Full-Text Search', aka: 'Elasticsearch, Inverted Index, Vector Search',
+    summary: 'Specialized data stores and indexing structures optimized for text search and similarity queries — beyond what SQL can do.',
+    body: `<strong>Inverted Index:</strong> The core data structure behind full-text search. Maps each word to the list of documents containing it. Fast lookup: "find all docs containing 'async'" = O(1) lookup in the index.<br><br>
+<strong>Elasticsearch / OpenSearch:</strong> Distributed search engine built on Apache Lucene. Supports full-text search, faceting, aggregations, fuzzy matching, geospatial queries. Often used alongside a primary DB ("dual write" pattern).<br><br>
+<strong>Relevance scoring:</strong> TF-IDF (term frequency-inverse document frequency) and BM25 rank results by relevance — not just presence.<br><br>
+<strong>Vector Search (Embeddings):</strong> Represent documents/images as dense vectors (embeddings from ML models). Similarity search finds nearest neighbors in vector space. Powers semantic search, recommendation systems, RAG (Retrieval-Augmented Generation). Tools: pgvector, Pinecone, Weaviate, Qdrant.<br><br>
+<strong>PostgreSQL full-text:</strong> Built-in tsvector/tsquery for basic full-text search without a separate system.`,
+    tags: ['Elasticsearch', 'inverted index', 'BM25', 'TF-IDF', 'vector search', 'embeddings', 'RAG', 'pgvector'],
+    related: ['sql-vs-nosql', 'indexing', 'caching']
+  },
+];
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let currentCat = 'all';
+let currentTerm = null;
+let searchQuery = '';
+
+// ── RENDER TABS ────────────────────────────────────────────────────────────
+function renderTabs() {
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = CATS.map(c => `
+    <div class="tab ${c.id === currentCat ? 'active' : ''}" data-cat="${c.id}"
+         style="${c.id === currentCat ? `border-bottom-color: ${c.color}; color: ${c.color}` : ''}">
+      ${c.id !== 'all' ? `<span class="tab-dot" style="background:${c.color}"></span>` : ''}
+      ${c.label}
+    </div>
+  `).join('');
+  tabsEl.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => { currentCat = t.dataset.cat; renderTabs(); renderList(); };
+  });
+}
+
+// ── FILTER TERMS ───────────────────────────────────────────────────────────
+function filteredTerms() {
+  return TERMS.filter(t => {
+    const catMatch = currentCat === 'all' || t.cat === currentCat;
+    if (!catMatch) return false;
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return t.name.toLowerCase().includes(q)
+      || t.aka.toLowerCase().includes(q)
+      || t.summary.toLowerCase().includes(q)
+      || (t.tags || []).some(tag => tag.toLowerCase().includes(q));
+  });
+}
+
+function highlight(text) {
+  if (!searchQuery) return text;
+  const re = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.replace(re, '<mark>$1</mark>');
+}
+
+// ── RENDER LIST ────────────────────────────────────────────────────────────
+function renderList() {
+  const list = document.getElementById('term-list');
+  const terms = filteredTerms();
+  document.getElementById('result-count').textContent = `${terms.length} term${terms.length !== 1 ? 's' : ''}`;
+
+  if (!terms.length) {
+    list.innerHTML = `<div class="no-results">No results for "${searchQuery}"</div>`;
+    return;
+  }
+
+  list.innerHTML = terms.map(t => {
+    const cat = CATS.find(c => c.id === t.cat);
+    return `
+      <div class="term-item ${currentTerm?.id === t.id ? 'active' : ''}" data-id="${t.id}">
+        <span class="term-cat-dot ${`bg-${t.cat}`}"></span>
+        <div>
+          <div class="term-name">${highlight(t.name)}</div>
+          <div class="term-preview">${highlight(t.summary)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.term-item').forEach(el => {
+    el.onclick = () => {
+      const term = TERMS.find(t => t.id === el.dataset.id);
+      currentTerm = term;
+      renderList();
+      renderDetail(term);
+    };
+  });
+}
+
+// ── RENDER DETAIL ──────────────────────────────────────────────────────────
+function renderDetail(term) {
+  const detail = document.getElementById('detail');
+  const cat = CATS.find(c => c.id === term.cat);
+  const relatedTerms = (term.related || []).map(id => TERMS.find(t => t.id === id)).filter(Boolean);
+
+  detail.innerHTML = `
+    <div class="detail-cat c-${term.cat}">
+      <span class="term-cat-dot bg-${term.cat}" style="display:inline-block;width:8px;height:8px;border-radius:50%;"></span>
+      ${cat.label}
+    </div>
+    <div class="detail-title">${term.name}</div>
+    ${term.aka ? `<div class="detail-aka">Also: ${term.aka}</div>` : ''}
+    <div class="detail-body">${term.body}</div>
+
+    ${term.analogy ? `
+      <div class="detail-section">
+        <div class="detail-section-title">Analogy</div>
+        <div class="analogy-block">
+          <span class="label">// mental model</span>
+          ${term.analogy}
+        </div>
+      </div>
+    ` : ''}
+
+    ${term.code ? `
+      <div class="detail-section">
+        <div class="detail-section-title">Example</div>
+        <div class="code-block">${term.code}</div>
+      </div>
+    ` : ''}
+
+    ${term.tags?.length ? `
+      <div class="detail-section">
+        <div class="detail-section-title">Keywords</div>
+        <div class="tag-list">
+          ${term.tags.map(tag => `<span class="tag" data-search="${tag}">${tag}</span>`).join('')}
+        </div>
+      </div>
+    ` : ''}
+
+    ${relatedTerms.length ? `
+      <div class="detail-section">
+        <div class="detail-section-title">Related Concepts</div>
+        <div class="tag-list">
+          ${relatedTerms.map(rt => `
+            <span class="tag" style="border-color:rgba(74,240,160,0.2);color:var(--accent)" data-related="${rt.id}">→ ${rt.name}</span>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+  `;
+
+  // Tag click → search
+  detail.querySelectorAll('.tag[data-search]').forEach(el => {
+    el.onclick = () => {
+      document.getElementById('search').value = el.dataset.search;
+      searchQuery = el.dataset.search;
+      currentCat = 'all';
+      renderTabs();
+      renderList();
+    };
+  });
+
+  // Related click → navigate
+  detail.querySelectorAll('.tag[data-related]').forEach(el => {
+    el.onclick = () => {
+      const term = TERMS.find(t => t.id === el.dataset.related);
+      if (term) {
+        currentTerm = term;
+        currentCat = 'all';
+        searchQuery = '';
+        document.getElementById('search').value = '';
+        renderTabs();
+        renderList();
+        renderDetail(term);
+      }
+    };
+  });
+}
+
+// ── SEARCH ─────────────────────────────────────────────────────────────────
+document.getElementById('search').addEventListener('input', e => {
+  searchQuery = e.target.value.trim();
+  renderList();
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+renderTabs();
+renderList();
+
+// Select first term
+if (TERMS.length) {
+  currentTerm = TERMS[0];
+  renderList();
+  renderDetail(TERMS[0]);
+}
+</script>
+</body>
+</html>
