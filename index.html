@@ -372,6 +372,8 @@
   .bg-lang { background: #a3e635; }
   .c-embed { color: #06b6d4; }
   .bg-embed { background: #06b6d4; }
+  .c-fpga { color: #f59e0b; }
+  .bg-fpga { background: #f59e0b; }
 
   mark {
     background: rgba(74,240,160,0.25);
@@ -440,6 +442,7 @@ const CATS = [
   { id: 'sec',    label: 'Security',     color: '#f472b6' },
   { id: 'lang',   label: 'Paradigms',    color: '#a3e635' },
   { id: 'embed',  label: 'Embedded',     color: '#06b6d4' },
+  { id: 'fpga',   label: 'FPGA / HDL',   color: '#f59e0b' },
 ];
 
 const TERMS = [
@@ -1561,6 +1564,376 @@ arm-none-eabi-gdb firmware.elf
 (gdb) x/16xw 0x20000000      # dump 16 words from SRAM`,
     tags: ['JTAG', 'SWD', 'GDB', 'OpenOCD', 'J-Link', 'ST-Link', 'breakpoints', 'watchpoints', 'semihosting', 'flash'],
     related: ['cross-compilation', 'bare-metal', 'bootloader']
+  },
+
+  // ── FPGA / HDL ─────────────────────────────────────────────────────────────
+  {
+    id: 'fpga-arch', cat: 'fpga', name: 'FPGA Architecture', aka: 'Field-Programmable Gate Array, LUT, CLB, BRAM, DSP slice',
+    summary: 'A reconfigurable silicon chip composed of programmable logic blocks, routing fabric, and hard IP — you define the hardware by loading a bitstream.',
+    body: `An FPGA is not a processor running software — it's a sea of configurable hardware primitives wired together by a programmable interconnect. You describe the circuit; the FPGA <em>becomes</em> that circuit.<br><br>
+<strong>Core primitives:</strong><br>
+• <strong>LUT (Look-Up Table):</strong> A small truth table stored in SRAM. A 6-input LUT can implement any combinational function of 6 inputs. The fundamental logic element.<br>
+• <strong>Flip-Flop (FF):</strong> A D flip-flop co-located with each LUT. Captures LUT output on clock edge — implements registers and sequential logic.<br>
+• <strong>CLB / Slice (Xilinx) / ALM (Intel):</strong> A cluster of LUTs + FFs + carry-chain logic forming the basic programmable logic tile.<br>
+• <strong>BRAM (Block RAM):</strong> Dedicated dual-port SRAM blocks (typically 18Kb or 36Kb each). Used for FIFOs, frame buffers, lookup tables, instruction memory.<br>
+• <strong>DSP Slice:</strong> Hard multiplier-accumulator block (18×18 or 27×18 multiply + adder). Implements filters, correlators, and arithmetic far more efficiently than LUTs.<br>
+• <strong>Routing fabric:</strong> Programmable switch matrix connecting all elements. Routing delay is often the dominant timing path — good floorplanning matters.<br><br>
+<strong>Hard IP blocks:</strong> High-speed serial transceivers (PCIe, JESD204B), DRAM controllers (MIG), PLLs/MMCMs for clock generation — these are fixed silicon, not LUT-based.`,
+    analogy: 'Like a city of empty lots (LUTs) connected by programmable roads (routing). Your HDL is the zoning plan — it decides what building goes on each lot and which roads connect them.',
+    tags: ['LUT', 'flip-flop', 'BRAM', 'DSP slice', 'CLB', 'routing', 'bitstream', 'Xilinx', 'Intel', 'reconfigurable'],
+    related: ['synthesis-flow', 'fpga-vs-asic', 'timing-constraints']
+  },
+  {
+    id: 'hdl-mindset', cat: 'fpga', name: 'HDL vs Programming', aka: 'Hardware description language, concurrent execution, RTL mindset',
+    summary: 'HDL code describes hardware structure and concurrent signal flow — not a sequence of instructions for a CPU to execute.',
+    body: `The single biggest mistake new HDL designers make is thinking in software. In C, statements execute one after another. In Verilog, <strong>everything is concurrent</strong> — all <code>always</code> blocks and <code>assign</code> statements run simultaneously, every clock cycle.<br><br>
+<strong>You are not programming — you are describing hardware:</strong><br>
+• Every <code>reg</code> and <code>wire</code> is a physical signal<br>
+• Every <code>always @(posedge clk)</code> is a bank of flip-flops<br>
+• Every <code>assign</code> is a combinational gate network<br>
+• <code>if/else</code> in combinational logic becomes multiplexers<br>
+• <code>for</code> loops <em>unroll</em> at synthesis time — they generate hardware, not iterations<br><br>
+<strong>RTL (Register Transfer Level):</strong> The abstraction level between gates and behavior. You describe data flowing between registers through combinational logic. The synthesizer maps this to LUTs and FFs.<br><br>
+<strong>Simulation vs Synthesis:</strong> Some Verilog constructs simulate correctly but cannot be synthesized (e.g., <code>#10</code> delays, <code>initial</code> blocks, <code>$display</code>). Always ask: "can this be made out of LUTs and flip-flops?"<br><br>
+<strong>Hierarchy:</strong> Designs are built from modules — each module is a hardware block with ports. Modules instantiate other modules, building a design hierarchy from primitives up to system level.`,
+    analogy: 'Writing Verilog is like designing a factory floor layout — you decide which machines exist and how conveyor belts connect them. The factory runs everything in parallel, all the time.',
+    tags: ['RTL', 'concurrent', 'synthesis', 'simulation', 'module', 'wire', 'reg', 'always', 'assign'],
+    related: ['verilog-sv', 'combinational', 'sequential', 'synthesis-flow']
+  },
+  {
+    id: 'verilog-sv', cat: 'fpga', name: 'Verilog & SystemVerilog', aka: 'Verilog-2001, SV, IEEE 1364, IEEE 1800',
+    summary: 'The dominant HDLs for FPGA and ASIC design — Verilog for RTL, SystemVerilog for advanced RTL and verification.',
+    body: `<strong>Verilog (IEEE 1364):</strong> The original HDL, dating to 1984. Concise and widely synthesizable. Verilog-2001 is the pragmatic standard — adds <code>always @(*)</code>, port declarations in module header, generate blocks.<br><br>
+<strong>SystemVerilog (IEEE 1800):</strong> A superset of Verilog. Adds:<br>
+• RTL: <code>logic</code> type (replaces reg/wire ambiguity), <code>always_ff</code>/<code>always_comb</code>/<code>always_latch</code>, enums, structs, packed arrays, interfaces<br>
+• Verification: classes, randomization, covergroups, assertions (SVA), constrained-random testbenches, OOP<br><br>
+<strong>Key RTL constructs:</strong><br>
+• <code>module / endmodule</code> — hardware block with ports<br>
+• <code>wire</code> — combinational net (driven by assign or module output)<br>
+• <code>reg</code> / <code>logic</code> — holds value (synthesizes to FF if in clocked always block)<br>
+• <code>assign</code> — continuous combinational assignment<br>
+• <code>always_ff @(posedge clk)</code> — register inference<br>
+• <code>always_comb</code> — combinational logic block<br>
+• <code>parameter</code> / <code>localparam</code> — compile-time constants<br>
+• <code>generate</code> — conditional or repeated hardware instantiation<br><br>
+<strong>VHDL:</strong> The alternative HDL — strongly typed, verbose, favored in Europe and defense/aerospace. Functionally equivalent at RTL level.`,
+    code: `// SystemVerilog: parameterized register with sync reset
+module reg_n #(parameter WIDTH = 8) (
+  input  logic             clk, rst_n,
+  input  logic [WIDTH-1:0] d,
+  output logic [WIDTH-1:0] q
+);
+  always_ff @(posedge clk or negedge rst_n)
+    if (!rst_n) q <= '0;
+    else        q <= d;
+endmodule
+
+// Instantiation
+reg_n #(.WIDTH(16)) u_reg (
+  .clk(clk), .rst_n(rst_n), .d(data_in), .q(data_out)
+);`,
+    tags: ['SystemVerilog', 'Verilog', 'VHDL', 'logic', 'always_ff', 'always_comb', 'module', 'parameter', 'generate', 'interface'],
+    related: ['hdl-mindset', 'combinational', 'sequential', 'fsm']
+  },
+  {
+    id: 'combinational', cat: 'fpga', name: 'Combinational Logic', aka: 'combinatorial, assign, always_comb, gates, mux',
+    summary: 'Logic whose output depends only on current inputs — no memory, no clock. Implemented as LUT networks in an FPGA.',
+    body: `Combinational logic computes an output purely as a function of current inputs. Change an input, and the output changes after a propagation delay (nanoseconds through LUT chains).<br><br>
+<strong>Two ways to express combinational logic in SV:</strong><br><br>
+1. <strong><code>assign</code> statement:</strong> Continuous assignment. Synthesizes to a net of gates. Best for simple expressions.<br>
+2. <strong><code>always_comb</code> block:</strong> All signals read inside auto-trigger the sensitivity list. For complex mux trees, priority encoders, decoders.<br><br>
+<strong>Critical pitfall — Incomplete sensitivity list / Inferred latch:</strong> In a combinational <code>always</code> block, if an output isn't assigned in every branch, the synthesizer infers a <strong>latch</strong> (level-sensitive storage) to hold the previous value. Latches are almost always a bug in synchronous designs. <code>always_comb</code> prevents this — it warns if a latch would be inferred. Always assign defaults before conditional logic.<br><br>
+<strong>Priority vs parallel:</strong> Nested <code>if/else</code> creates a priority chain (each mux feeds the next — more logic, longer path). <code>case</code> creates parallel muxes (tool may optimize to one-hot select). Use <code>unique case</code> in SV to assert mutual exclusivity and enable optimization.`,
+    code: `// assign: simple combinational
+assign sum   = a + b;
+assign carry = (a & b) | (a & cin) | (b & cin);
+
+// always_comb: mux with default (no latch)
+always_comb begin
+  y = 4'b0000;        // default — prevents latch
+  unique case (sel)
+    2'b00: y = a;
+    2'b01: y = b;
+    2'b10: y = c;
+    2'b11: y = d;
+  endcase
+end
+
+// Priority encoder
+always_comb begin
+  enc = 3'd0;         // default
+  if      (req[7]) enc = 3'd7;
+  else if (req[6]) enc = 3'd6;
+  // ...
+end`,
+    tags: ['LUT', 'assign', 'always_comb', 'mux', 'latch', 'priority encoder', 'decoder', 'propagation delay', 'unique case'],
+    related: ['sequential', 'verilog-sv', 'timing-constraints', 'hdl-mindset']
+  },
+  {
+    id: 'sequential', cat: 'fpga', name: 'Sequential Logic & Clocking', aka: 'flip-flop, register, pipeline, always_ff, synchronous design',
+    summary: 'Logic with memory — outputs depend on both current inputs and past state, updated on a clock edge.',
+    body: `Sequential logic adds memory to combinational logic. The clock edge is the heartbeat of a synchronous design — all state changes happen simultaneously on the rising (or falling) edge.<br><br>
+<strong>The golden rule of synchronous design:</strong> All flip-flop inputs must be stable for <em>setup time</em> before the clock edge and hold stable for <em>hold time</em> after. Violate this and you get metastability — a FF stuck in an undefined state.<br><br>
+<strong>Reset strategies:</strong><br>
+• <strong>Synchronous reset:</strong> <code>if (rst)</code> inside the clocked block. Clean timing, but requires a clock to reset.<br>
+• <strong>Asynchronous reset:</strong> <code>@(posedge clk or posedge rst)</code>. Resets immediately, no clock needed. Requires careful CDC handling of the reset deassertion.<br><br>
+<strong>Pipelining:</strong> Insert registers between combinational stages to break long logic paths. Each stage takes one cycle — latency increases, but clock frequency (throughput) increases dramatically. The foundation of high-performance RTL design.<br><br>
+<strong>Enable signals:</strong> A register with a clock enable (<code>if (en) q &lt;= d</code>) synthesizes to a FF with CE pin — no extra mux on the data path, just gating the FF's clock enable. More efficient than a mux feeding a free-running FF.`,
+    code: `// D flip-flop with sync reset and enable
+always_ff @(posedge clk) begin
+  if (rst)     q <= '0;
+  else if (en) q <= d;
+end
+
+// 4-stage pipeline register
+always_ff @(posedge clk) begin
+  pipe[0] <= data_in;
+  pipe[1] <= pipe[0];
+  pipe[2] <= pipe[1];
+  pipe[3] <= pipe[2];
+  // data_in appears at pipe[3] 4 cycles later
+end
+
+// Counter with overflow detection
+always_ff @(posedge clk) begin
+  if (rst)            count <= '0;
+  else if (count_en)  count <= count + 1'b1;
+end
+assign overflow = (count == MAX_COUNT);`,
+    tags: ['flip-flop', 'register', 'pipeline', 'clock enable', 'reset', 'synchronous', 'setup time', 'hold time', 'metastability'],
+    related: ['combinational', 'timing-constraints', 'cdc', 'fsm']
+  },
+  {
+    id: 'fsm', cat: 'fpga', name: 'Finite State Machines', aka: 'FSM, Mealy, Moore, one-hot, state machine',
+    summary: 'A design pattern for sequencing control logic through a set of discrete states, fundamental to digital hardware design.',
+    body: `FSMs are the primary tool for implementing control logic — protocols, arbiters, parsers, sequence detectors. Every non-trivial digital design has at least one FSM.<br><br>
+<strong>Moore vs Mealy:</strong><br>
+• <strong>Moore:</strong> Outputs depend only on current state. Clean, glitch-free outputs. Extra state may be needed.<br>
+• <strong>Mealy:</strong> Outputs depend on state AND current inputs. Faster response (output changes in same cycle as input), but outputs can glitch with input noise.<br><br>
+<strong>State encoding:</strong><br>
+• <strong>Binary:</strong> Fewest FFs (log₂N), but more combinational logic for next-state decode<br>
+• <strong>One-hot:</strong> One FF per state, only one FF active. More FFs, but simpler (and faster) decode logic — preferred for FPGA where FFs are plentiful<br>
+• <strong>Gray code:</strong> Only one bit changes between adjacent states — useful for async applications and low-EMI designs<br><br>
+<strong>Three-block style (recommended):</strong><br>
+1. State register — <code>always_ff</code>, state ← next_state<br>
+2. Next-state logic — <code>always_comb</code>, combinational decode of current state + inputs<br>
+3. Output logic — <code>always_comb</code> (Moore) or separate (Mealy)<br><br>
+<strong>Tool directive:</strong> Use <code>// synthesis full_case parallel_case</code> or <code>unique case</code> in SV to allow synthesis optimization and catch unhandled states.`,
+    code: `// One-hot FSM: simple UART TX controller
+typedef enum logic [2:0] {
+  IDLE  = 3'b001,
+  START = 3'b010,
+  DATA  = 3'b100
+} state_t;
+
+state_t state, next;
+
+// 1) State register
+always_ff @(posedge clk)
+  state <= next;
+
+// 2) Next-state logic
+always_comb begin
+  next = state;
+  unique case (state)
+    IDLE:  if (send)   next = START;
+    START:             next = DATA;
+    DATA:  if (done)   next = IDLE;
+  endcase
+end
+
+// 3) Moore outputs
+assign tx_active = (state != IDLE);`,
+    tags: ['FSM', 'Moore', 'Mealy', 'one-hot', 'binary encoding', 'Gray code', 'state register', 'next-state', 'enum'],
+    related: ['sequential', 'verilog-sv', 'combinational']
+  },
+  {
+    id: 'timing-constraints', cat: 'fpga', name: 'Timing & Constraints', aka: 'setup time, hold time, SDC, timing closure, critical path, slack',
+    summary: 'Specifying and meeting timing requirements that guarantee flip-flops sample stable data — the difference between a working design and random bit errors.',
+    body: `Every flip-flop has two requirements relative to its clock edge:<br>
+• <strong>Setup time (Tsu):</strong> Data must be stable at least Tsu <em>before</em> the clock edge<br>
+• <strong>Hold time (Th):</strong> Data must remain stable at least Th <em>after</em> the clock edge<br><br>
+<strong>Setup slack = clock period − (data path delay + Tsu).</strong> Negative slack = timing failure = wrong data captured.<br><br>
+<strong>SDC (Synopsys Design Constraints):</strong> The industry-standard format for timing constraints, used by Vivado, Quartus, DC, and others.<br>
+Key constraints:<br>
+• <code>create_clock</code> — defines clock period and waveform<br>
+• <code>set_input_delay</code> / <code>set_output_delay</code> — I/O timing relative to clock<br>
+• <code>set_false_path</code> — tells the tool to ignore a path (e.g., static config, CDC paths)<br>
+• <code>set_multicycle_path</code> — relaxes timing for paths that take multiple cycles<br><br>
+<strong>Critical path:</strong> The longest combinational path between two registers — it sets the maximum clock frequency. To fix: pipeline (insert a register mid-path), recode the logic, or retiming (tool-assisted FF repositioning).<br><br>
+<strong>Timing closure:</strong> Iterative process of running synthesis + place & route, analyzing reports, fixing violations, repeating. At high frequencies this dominates project schedules.`,
+    code: `# SDC constraint file (Vivado / Quartus)
+
+# Define 200 MHz system clock on pin E3
+create_clock -period 5.000 -name clk_sys [get_ports clk]
+
+# Input from external device, arrives 2ns after clock edge
+set_input_delay -clock clk_sys 2.0 [get_ports data_in]
+
+# Output must be valid 1ns before next clock edge
+set_output_delay -clock clk_sys 1.0 [get_ports data_out]
+
+# CDC path — analyzed separately, not by timing engine
+set_false_path -from [get_clocks clk_a] -to [get_clocks clk_b]
+
+# Config register written once at startup — relax to 4 cycles
+set_multicycle_path 4 -setup -from [get_cells cfg_reg*]`,
+    tags: ['setup time', 'hold time', 'slack', 'SDC', 'critical path', 'timing closure', 'create_clock', 'false path', 'multicycle', 'retiming'],
+    related: ['fpga-arch', 'sequential', 'synthesis-flow', 'cdc']
+  },
+  {
+    id: 'cdc', cat: 'fpga', name: 'Clock Domain Crossing', aka: 'CDC, metastability, synchronizer, FIFO, handshake',
+    summary: 'Safely passing signals between logic running on different clocks — the source of some of the nastiest, hardest-to-reproduce hardware bugs.',
+    body: `When a flip-flop clocked by domain A drives a flip-flop clocked by domain B, setup/hold time can be violated at any time — the phase relationship between clocks is undefined. The receiving FF enters <strong>metastability</strong>: an indeterminate voltage that eventually resolves, but may take longer than one clock period, causing a wrong value to propagate.<br><br>
+<strong>Mean Time Between Failures (MTBF):</strong> Metastability is probabilistic. Proper synchronization makes MTBF billions of years; improper crossing makes it seconds.<br><br>
+<strong>Solutions by signal type:</strong><br><br>
+<strong>Single-bit control signals:</strong> Two-flop synchronizer — two back-to-back FFs in the destination domain. The first FF may metastabilize; the second samples after a full clock period, giving the voltage time to resolve. Never use a single FF.<br><br>
+<strong>Multi-bit data / buses:</strong> Gray-code counter (only 1 bit changes per increment — safe to synchronize) for pointers, or a full <strong>asynchronous FIFO</strong> with Gray-coded read/write pointers.<br><br>
+<strong>Handshake:</strong> Req/Ack protocol — sender asserts req, waits for ack from receiver. Both signals pass through two-flop synchronizers. Safe but slow.<br><br>
+<strong>CDC static analysis:</strong> Tools like Questa CDC, SpyGlass, and Meridian check for unsynchronized crossings. Timing analysis alone won't catch CDC bugs — <code>set_false_path</code> hides them from the timing engine.`,
+    code: `// Two-flop synchronizer for single control bit
+module sync_2ff (
+  input  logic clk_dst, async_in,
+  output logic sync_out
+);
+  logic meta;
+  // Instruct tool: these FFs must be placed close together
+  (* ASYNC_REG = "TRUE" *) logic [1:0] sync_pipe;
+
+  always_ff @(posedge clk_dst) begin
+    sync_pipe[0] <= async_in;     // may metastabilize
+    sync_pipe[1] <= sync_pipe[0]; // resolves here
+  end
+  assign sync_out = sync_pipe[1];
+endmodule`,
+    tags: ['metastability', 'synchronizer', 'two-flop', 'FIFO', 'Gray code', 'handshake', 'ASYNC_REG', 'CDC', 'MTBF'],
+    related: ['sequential', 'timing-constraints', 'fpga-arch']
+  },
+  {
+    id: 'testbench', cat: 'fpga', name: 'Testbenches & Simulation', aka: 'TB, UVM, ModelSim, Questa, VCS, cocotb, waveforms',
+    summary: 'Simulation infrastructure that drives a design with stimulus and checks its behavior before a single gate is synthesized.',
+    body: `Simulation is the primary verification method in hardware design. A testbench (TB) instantiates the design under test (DUT), applies stimulus, and checks outputs — all in simulation time, not real time.<br><br>
+<strong>Testbench structure:</strong><br>
+• Clock generation (<code>initial forever #5 clk = ~clk</code>)<br>
+• Reset sequence<br>
+• Stimulus — drive inputs in <code>initial</code> blocks<br>
+• Response checking — compare outputs to expected values, use <code>$error</code> / <code>assert</code><br>
+• <code>$finish</code> to end simulation<br><br>
+<strong>SystemVerilog Assertions (SVA):</strong> Inline properties that check signal relationships. <code>assert property</code> fires an error when violated. Far more expressive than manual if-checks.<br><br>
+<strong>Constrained-random verification:</strong> Generate random stimulus within legal constraints. Apply to DUT. Check with a reference model. Collect functional coverage until all cases are hit. The UVM (Universal Verification Methodology) framework structures this at scale.<br><br>
+<strong>cocotb:</strong> Python-based testbench framework — write TB logic in Python, drive RTL via VPI. No SystemVerilog needed. Huge ecosystem (pytest, numpy, etc.).<br><br>
+<strong>Waveform viewers:</strong> Vivado integrated, GTKWave (free), Verdi, DVT. Export <code>.vcd</code> or <code>.fsdb</code> files from simulation.`,
+    code: `// SystemVerilog testbench skeleton
+module tb_adder;
+  logic [7:0] a, b, sum;
+  logic       carry;
+
+  // Instantiate DUT
+  adder_8bit dut (.a(a), .b(b), .sum(sum), .carry(carry));
+
+  // Directed tests
+  initial begin
+    $dumpfile("waves.vcd"); $dumpvars(0, tb_adder);
+    a = 8'hFF; b = 8'h01; #10;
+    assert (carry == 1'b1) else $error("Expected carry!");
+
+    a = 8'h0F; b = 8'hF0; #10;
+    assert (sum == 8'hFF)  else $error("Sum mismatch!");
+
+    $display("All tests passed!"); $finish;
+  end
+endmodule`,
+    tags: ['testbench', 'simulation', 'SVA', 'UVM', 'cocotb', 'VCD', 'GTKWave', 'coverage', 'assertions', 'constrained-random'],
+    related: ['verilog-sv', 'hdl-mindset', 'synthesis-flow']
+  },
+  {
+    id: 'synthesis-flow', cat: 'fpga', name: 'Synthesis & Implementation Flow', aka: 'RTL → bitstream, Vivado, Quartus, place and route, P&R',
+    summary: 'The multi-stage toolchain that transforms HDL source into a bitstream that configures an FPGA\'s physical resources.',
+    body: `Getting from Verilog to a running FPGA involves several distinct stages, each with its own reports and failure modes:<br><br>
+<strong>1. Elaboration:</strong> Parse HDL, resolve parameters, expand generate blocks. First stage where syntax/semantic errors surface.<br><br>
+<strong>2. Synthesis:</strong> Map RTL to a technology-independent gate netlist, then map to target FPGA primitives (LUTs, FFs, BRAM, DSP). Reports: resource utilization estimate, timing estimate (pre-route). Tools: Vivado Synthesis, Quartus Synthesis, Synplify, Yosys (open-source).<br><br>
+<strong>3. Implementation / Place & Route (P&R):</strong><br>
+• <strong>Placement:</strong> Assign each LUT/FF/BRAM to a physical location on the die<br>
+• <strong>Routing:</strong> Connect placed elements through the switch matrix. Routing delay depends on distance and congestion.<br>
+Post-route timing is the ground truth — the number that matters for sign-off.<br><br>
+<strong>4. Bitstream Generation:</strong> Convert placed-and-routed design into the binary configuration file that programs the FPGA. Loaded via JTAG or stored in SPI flash.<br><br>
+<strong>5. Programming:</strong> Push bitstream to device via JTAG programmer (Vivado Hardware Manager, OpenOCD, Quartus Programmer).<br><br>
+<strong>Iterative timing closure:</strong> If post-route timing fails: add pipeline stages, apply constraints, try different placement strategies, upgrade FPGA speed grade.`,
+    code: `# Vivado non-project mode build script (Tcl)
+read_verilog -sv [glob src/*.sv]
+read_xdc constraints/timing.xdc
+
+synth_design -top top_module -part xc7a35tcpg236-1
+opt_design
+place_design
+route_design
+
+# Check timing
+report_timing_summary -file timing_summary.rpt
+report_utilization    -file utilization.rpt
+
+# Generate bitstream if timing met
+write_bitstream -force output/design.bit`,
+    tags: ['synthesis', 'place and route', 'bitstream', 'Vivado', 'Quartus', 'Yosys', 'timing closure', 'utilization', 'Tcl', 'JTAG'],
+    related: ['fpga-arch', 'timing-constraints', 'hdl-mindset', 'jtag-debug']
+  },
+  {
+    id: 'axi', cat: 'fpga', name: 'AXI & IP Integration', aka: 'AXI4, AXI-Lite, AXI-Stream, AMBA, IP core, block design',
+    summary: 'The ARM AMBA AXI bus protocol — the universal glue connecting IP blocks inside Xilinx, Intel, and custom FPGA designs.',
+    body: `Modern FPGA designs are assembled from IP blocks — vendor-supplied or custom — connected by standardized buses. AXI (Advanced eXtensible Interface) is the dominant standard, part of the ARM AMBA spec.<br><br>
+<strong>Three AXI variants:</strong><br>
+• <strong>AXI4 (full):</strong> High-performance memory-mapped, burst transactions up to 256 beats. For DDR controllers, DMA engines, high-bandwidth peripherals.<br>
+• <strong>AXI4-Lite:</strong> Simplified, single-transfer only. No bursts. Perfect for control/status register banks, low-bandwidth peripherals. Easy to implement from scratch.<br>
+• <strong>AXI4-Stream:</strong> Unidirectional streaming data — no addresses. Just TDATA, TVALID, TREADY (and optional TKEEP, TLAST). Used for video pipelines, DSP chains, packet processing.<br><br>
+<strong>Handshake protocol:</strong> All AXI channels use VALID/READY handshake. A transfer occurs when both VALID (sender) and READY (receiver) are high on a clock edge. Either side can stall by deasserting its signal.<br><br>
+<strong>IP cores:</strong> Pre-built parameterized modules (Xilinx Catalog, Intel IP Library) for DDR4 controllers, PCIe, Ethernet MACs, FIFOs, clocking wizards, video processing. Assembled graphically in Vivado Block Design or Quartus Platform Designer.<br><br>
+<strong>Custom AXI-Lite slave:</strong> The most common thing to implement — a register bank the CPU can read/write over AXI to control your custom logic.`,
+    code: `// AXI4-Stream passthrough (TVALID/TREADY handshake)
+module axis_passthrough #(parameter DATA_W = 32) (
+  input  logic                  clk, rst_n,
+  // Slave (input) port
+  input  logic [DATA_W-1:0]     s_tdata,
+  input  logic                  s_tvalid,
+  input  logic                  s_tlast,
+  output logic                  s_tready,
+  // Master (output) port
+  output logic [DATA_W-1:0]     m_tdata,
+  output logic                  m_tvalid,
+  output logic                  m_tlast,
+  input  logic                  m_tready
+);
+  // Transfer when both valid and ready
+  assign s_tready = m_tready;
+  assign m_tvalid = s_tvalid;
+  assign m_tdata  = s_tdata;
+  assign m_tlast  = s_tlast;
+endmodule`,
+    tags: ['AXI4', 'AXI-Lite', 'AXI-Stream', 'AMBA', 'VALID/READY', 'IP core', 'burst', 'handshake', 'block design', 'register map'],
+    related: ['fpga-arch', 'synthesis-flow', 'sequential']
+  },
+  {
+    id: 'fpga-vs-asic', cat: 'fpga', name: 'FPGA vs ASIC', aka: 'Application-Specific IC, NRE, tape-out, reconfigurability',
+    summary: 'The fundamental trade-off in digital hardware implementation: the flexible, reprogrammable FPGA versus the fixed, optimized ASIC.',
+    body: `<strong>FPGA (Field-Programmable Gate Array):</strong><br>
+• Reconfigurable — reprogram in seconds, iterate designs in days<br>
+• Higher unit cost at all volumes<br>
+• Higher power consumption (routing fabric, configuration SRAM overhead)<br>
+• Lower clock frequency ceiling (typically 300–600 MHz practical limit for complex logic)<br>
+• Zero NRE (Non-Recurring Engineering cost)<br>
+• Lead time: buy online, ship in days<br>
+• Risk: near-zero — fix bugs with new bitstream<br><br>
+<strong>ASIC (Application-Specific Integrated Circuit):</strong><br>
+• Fixed at tape-out — bugs require a new mask set (months, millions of dollars)<br>
+• Lower unit cost at high volume (>50k–1M units depending on node)<br>
+• Orders of magnitude lower power for the same function<br>
+• Maximum clock frequency (GHz range)<br>
+• NRE: $1M–$10M+ for advanced nodes (7nm, 5nm)<br>
+• Lead time: 6–18 months from tape-out to silicon<br><br>
+<strong>FPGA → ASIC path:</strong> FPGAs are commonly used to prototype and validate ASIC designs. The same RTL can target both — FPGA for early bringup and software integration, ASIC for production.<br><br>
+<strong>eFPGA:</strong> Embedded FPGA fabric integrated into an ASIC — combines programmability with lower overhead than a discrete FPGA.`,
+    analogy: 'FPGA is a whiteboard — write, erase, rewrite. ASIC is a printed poster — perfect and cheap at scale, but expensive and slow to produce, and you can\'t change it.',
+    tags: ['ASIC', 'FPGA', 'NRE', 'tape-out', 'reconfigurable', 'power', 'unit cost', 'prototype', 'eFPGA', 'RTL reuse'],
+    related: ['fpga-arch', 'synthesis-flow', 'timing-constraints']
   },
 ];
 
