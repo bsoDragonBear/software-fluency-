@@ -2455,7 +2455,9 @@ function renderDetail(term) {
 
 // ── RANDOM ─────────────────────────────────────────────────────────────────
 function pickRandom() {
-  const term = TERMS[Math.floor(Math.random() * TERMS.length)];
+  const pool = TERMS.filter(t => !knownTerms.has(t.id));
+  if (!pool.length) return;
+  const term = pool[Math.floor(Math.random() * pool.length)];
   currentTerm = term;
   currentCat = 'all';
   searchQuery = '';
